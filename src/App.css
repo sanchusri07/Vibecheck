@@ -1,77 +1,426 @@
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
-:root {
+/* ========================================
+   VIBECHECK — FLOATING GALAXY AUTH SCREEN
+======================================== */
+
+.auth-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
   font-family: 'DM Sans', sans-serif;
-  color: #f6f1ff;
-  background: #0d0b20;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  --bg: #0d0b20;
-  --panel: #17142f;
-  --panel2: #211c40;
-  --lavender: #bda7ff;
-  --muted: #bcb4d2;
-  --line: #393052;
+  color: #f5f1ff;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(8, 11, 36, 0.55),
+      rgba(22, 12, 55, 0.35)
+    ),
+    url("/vibecheck-galaxy.png") center / cover no-repeat fixed;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--bg); }
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--lavender); outline-offset: 3px; }
+/* Soft galaxy glow */
+.auth-page::before,
+.auth-page::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(2px);
+}
 
-.vc-shell { width: min(960px, 100%); margin: auto; padding: 36px 22px 50px; }
-.vc-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 26px; }
-.vc-header h1, .vc-card h1, .vc-card h2 { font-family: 'Playfair Display', serif; letter-spacing: -.4px; }
-.vc-header h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 4px 0; }
-.vc-header h1 span { color: var(--lavender); }
-.vc-card { background: var(--panel); border: 1px solid var(--line); border-radius: 25px; padding: clamp(22px, 5vw, 38px); box-shadow: 0 18px 50px #00000020; }
-.vc-setup { max-width: 680px; margin: 5vh auto; }
-.vc-card h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.2; margin: 12px 0; }
-.vc-card h2 { font-size: clamp(1.7rem, 4vw, 2.2rem); margin: 8px 0 12px; }
-.vc-card h3 { margin-top: 28px; }
-.vc-eyebrow { color: var(--lavender); font-size: .74rem; font-weight: 700; letter-spacing: 1.8px; }
-.vc-muted { color: var(--muted); line-height: 1.7; }
-.vc-soft { color: #c9c0df; line-height: 1.7; font-size: .92rem; }
-.vc-nav { display: flex; flex-wrap: wrap; gap: 9px; margin: 22px 0; }
-.vc-nav button, .vc-moods button, .vc-quiet { background: #201b3b; border: 1px solid var(--line); border-radius: 13px; color: #e7dfff; padding: 11px 15px; }
-.vc-nav button.active, .vc-moods button.selected { background: #3b305f; border-color: var(--lavender); color: white; }
-.vc-primary { display: inline-flex; justify-content: center; align-items: center; background: var(--lavender); color: #201632; border: 0; border-radius: 13px; padding: 13px 19px; font-weight: 700; margin-top: 14px; }
-.vc-primary:hover { filter: brightness(1.06); }
-.vc-quiet { margin-top: 14px; }
-.vc-link { display: block; background: transparent; border: 0; color: var(--muted); text-decoration: underline; padding: 13px; margin: 5px auto 0; }
-.vc-card label { display: block; color: #e9e2f8; font-size: .92rem; font-weight: 600; margin: 20px 0 9px; }
-.vc-card input:not([type="checkbox"]), .vc-card textarea, .vc-card select { width: 100%; border: 1px solid #494064; border-radius: 13px; padding: 13px 14px; color: #f8f4ff; background: #100e24; }
-.vc-card textarea { resize: vertical; line-height: 1.65; }
-.vc-card input::placeholder, .vc-card textarea::placeholder { color: #8f86a9; }
-.vc-card select { color-scheme: dark; }
-.vc-colours { display: flex; flex-wrap: wrap; gap: 13px; margin: 12px 0 22px; }
-.vc-colour { width: 39px; height: 39px; border: 3px solid transparent; border-radius: 50%; }
-.vc-colour.selected { outline: 2px solid #fff; outline-offset: 3px; }
-.vc-progress { height: 5px; background: #33294f; border-radius: 99px; overflow: hidden; margin: 18px 0 28px; }
-.vc-progress span { display: block; height: 100%; background: var(--lavender); border-radius: inherit; transition: width .2s ease; }
-.vc-emotion { font-size: 3.6rem; margin: 15px 0; }
-.vc-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-.vc-check { display: flex !important; align-items: center; gap: 10px; font-weight: 400 !important; }
-.vc-check input { accent-color: var(--lavender); width: 18px; height: 18px; }
-.vc-moods { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
-.vc-divider { height: 1px; background: var(--line); margin: 28px 0; }
-.vc-entry { background: #201b3b; border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 13px 0; overflow-wrap: anywhere; }
-.vc-entry p { line-height: 1.65; white-space: pre-wrap; }
-.vc-codebox { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background: var(--panel2); border: 1px dashed #67558d; border-radius: 15px; padding: 15px; margin: 20px 0; }
-.vc-codebox span { color: var(--muted); }
-.vc-codebox strong { font-size: 1.2rem; letter-spacing: 2px; color: var(--lavender); }
-.vc-codebox .vc-quiet { margin: 0 0 0 auto; }
-.vc-success, .vc-error { border-radius: 12px; padding: 13px 16px; line-height: 1.5; }
-.vc-success { color: #b7f3d8; background: #163329; border: 1px solid #285744; }
-.vc-error { color: #ffc6d0; background: #3b202d; border: 1px solid #6a3548; }
-.vc-footer { text-align: center; color: #9388b0; padding: 28px 10px 0; font-size: .86rem; }
-@media (max-width: 560px) {
-  .vc-shell { padding: 22px 13px 35px; }
-  .vc-header { align-items: flex-start; }
-  .vc-header .vc-quiet { padding: 9px; }
-  .vc-card { border-radius: 19px; }
-  .vc-nav button { flex: 1 1 auto; }
-  .vc-actions > button { flex: 1; }
+.auth-page::before {
+  width: 380px;
+  height: 380px;
+  top: -120px;
+  left: -100px;
+  background: radial-gradient(
+    circle,
+    rgba(153, 117, 255, 0.25),
+    transparent 70%
+  );
+  animation: galaxyGlow 8s ease-in-out infinite alternate;
+}
+
+.auth-page::after {
+  width: 420px;
+  height: 420px;
+  right: -140px;
+  bottom: -160px;
+  background: radial-gradient(
+    circle,
+    rgba(111, 166, 255, 0.2),
+    transparent 70%
+  );
+  animation: galaxyGlow 10s ease-in-out infinite alternate-reverse;
+}
+
+/* ========================================
+   FLOATING AUTHENTICATION CARD
+======================================== */
+
+.auth-card {
+  width: min(100%, 440px);
+  position: relative;
+  padding: 42px 36px;
+  margin: auto;
+
+  color: #f5f1ff;
+  text-align: center;
+
+  background: rgba(17, 15, 48, 0.76);
+  border: 1px solid rgba(202, 187, 255, 0.28);
+  border-radius: 30px;
+
+  box-shadow:
+    0 0 45px rgba(169, 148, 245, 0.15),
+    0 25px 80px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  animation: floatCard 5s ease-in-out infinite;
+}
+
+/* Gentle lavender edge glow */
+.auth-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background: linear-gradient(
+    135deg,
+    rgba(214, 198, 255, 0.45),
+    transparent 40%,
+    rgba(156, 221, 210, 0.22)
+  );
+
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* ========================================
+   LOGO ORB
+======================================== */
+
+.auth-orb {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 34px;
+  color: #fff;
+
+  background: radial-gradient(
+    circle at 30% 25%,
+    #e6ddff,
+    #a994f5 48%,
+    #6252a8
+  );
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 20px rgba(197, 180, 255, 0.4),
+    0 0 55px rgba(169, 148, 245, 0.18);
+
+  animation: orbPulse 4s ease-in-out infinite;
+}
+
+/* ========================================
+   HEADINGS AND TEXT
+======================================== */
+
+.auth-card h1 {
+  margin: 0 0 12px;
+  color: #f5f1ff;
+
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+}
+
+.auth-eyebrow {
+  margin: 0 0 12px;
+  color: #c5b4ff;
+
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.7;
+}
+
+.auth-subtitle {
+  margin: 0 0 28px;
+  color: #c0bbd9;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* ========================================
+   AUTHENTICATION FORM
+======================================== */
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.auth-card label {
+  display: block;
+  margin-bottom: 7px;
+  color: #d5cfee;
+  font-size: 0.88rem;
+}
+
+.auth-card form input,
+.auth-card input[type="email"],
+.auth-card input[type="password"],
+.auth-card input[type="text"] {
+  display: block;
+  width: 100%;
+  min-height: 49px;
+  padding: 13px 15px;
+
+  color: #f5f1ff;
+  background: rgba(7, 9, 32, 0.65);
+
+  border: 1px solid rgba(202, 187, 255, 0.23);
+  border-radius: 13px;
+
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.94rem;
+
+  outline: none;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.auth-card input::placeholder {
+  color: #9690b7;
+  opacity: 1;
+}
+
+.auth-card form input:focus,
+.auth-card input[type="email"]:focus,
+.auth-card input[type="password"]:focus,
+.auth-card input[type="text"]:focus {
+  border-color: #c5b4ff;
+  background: rgba(13, 12, 43, 0.9);
+  box-shadow: 0 0 0 4px rgba(197, 180, 255, 0.1);
+}
+
+/* ========================================
+   AUTHENTICATION BUTTONS
+======================================== */
+
+.auth-card button {
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.auth-card button[type="submit"] {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 5px;
+  padding: 13px 20px;
+
+  color: #17112e;
+  font-size: 0.97rem;
+  font-weight: 700;
+
+  background: linear-gradient(135deg, #ded3ff, #a994f5);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+
+  box-shadow: 0 7px 24px rgba(169, 148, 245, 0.2);
+}
+
+.auth-card button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 11px 30px rgba(169, 148, 245, 0.3);
+  filter: brightness(1.06);
+}
+
+.auth-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+/* Secondary links and buttons */
+.auth-card button:not([type="submit"]) {
+  color: #c5b4ff;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.auth-card button:not([type="submit"]):hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* ========================================
+   STATUS MESSAGES
+======================================== */
+
+.auth-card .error-message {
+  padding: 12px 14px;
+  color: #ffc3d0;
+  text-align: left;
+  background: rgba(228, 92, 125, 0.12);
+  border: 1px solid rgba(228, 92, 125, 0.3);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.auth-card .success-message {
+  padding: 12px 14px;
+  color: #c4f4df;
+  text-align: left;
+  background: rgba(83, 190, 145, 0.12);
+  border: 1px solid rgba(123, 224, 181, 0.3);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+/* ========================================
+   AUTHENTICATED DASHBOARD WRAPPER
+   Keep dashboard layout unchanged
+======================================== */
+
+.authenticated-app {
+  min-height: 100vh;
+}
+
+/* Log out button only — does not restyle dashboard */
+.authenticated-app > .logout-button {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 100;
+
+  padding: 10px 16px;
+  color: #f5f1ff;
+
+  background: rgba(17, 15, 48, 0.85);
+  border: 1px solid rgba(202, 187, 255, 0.3);
+  border-radius: 12px;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.authenticated-app > .logout-button:hover {
+  background: rgba(55, 43, 100, 0.95);
+  border-color: #c5b4ff;
+}
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+
+@keyframes floatCard {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes galaxyGlow {
+  from {
+    transform: scale(0.95);
+    opacity: 0.65;
+  }
+
+  to {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(197, 180, 255, 0.4);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 35px rgba(197, 180, 255, 0.6);
+  }
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS
+======================================== */
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: 24px 16px;
+    background-attachment: scroll;
+  }
+
+  .auth-card {
+    padding: 32px 23px;
+    border-radius: 24px;
+  }
+
+  .auth-orb {
+    width: 60px;
+    height: 60px;
+    font-size: 29px;
+  }
+
+  .auth-subtitle {
+    margin-bottom: 23px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .auth-card,
+  .auth-orb,
+  .auth-page::before,
+  .auth-page::after {
+    animation: none;
+  }
 }
