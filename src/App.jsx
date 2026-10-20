@@ -95,7 +95,7 @@ export default function App() {
   );
   const [selfTalk, setSelfTalk] = useState("");
   const [reflectionTime, setReflectionTime] = useState("9:00 PM");
-  const [reflectionEmail, setReflectionEmail] = useState(true);
+  const [reflectionEmail, setReflectionEmail] = useState(false);
 
   const [mood, setMood] = useState("");
   const [journalText, setJournalText] = useState("");
@@ -140,7 +140,7 @@ export default function App() {
           );
           setSelfTalk(data.selfTalk || "");
           setReflectionTime(data.reflectionTime || "9:00 PM");
-          setReflectionEmail(data.reflectionEmail ?? true);
+          setReflectionEmail(data.reflectionEmail ?? false);
 
           if (!data.onboardingCompleted) {
             setPage("setup");
