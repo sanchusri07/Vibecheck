@@ -3,63 +3,53 @@ import React, { useEffect, useRef, useState } from "react";
 import "./QuietComfort.css";
 
 const moods = [
-  "Happy",
-  "Okay",
-  "Calm",
-  "Stressed",
-  "Anxious",
-  "Exhausted",
-  "Overwhelmed",
-  "Sad",
-  "Lonely",
-  "I don't know",
+  "😊 Happy",
+  "😌 Okay",
+  "🌿 Calm",
+  "😣 Stressed",
+  "😰 Anxious",
+  "😴 Exhausted",
+  "🫠 Overwhelmed",
+  "🌧️ Sad",
+  "🫂 Lonely",
+  "💭 I don't know",
 ];
 
 const difficultMoods = [
-  "Stressed",
-  "Anxious",
-  "Exhausted",
-  "Overwhelmed",
-  "Sad",
-  "Lonely",
-  "I don't know",
+  "😣 Stressed",
+  "😰 Anxious",
+  "😴 Exhausted",
+  "🫠 Overwhelmed",
+  "🌧️ Sad",
+  "🫂 Lonely",
+  "💭 I don't know",
 ];
 
 const groundingSteps = [
   {
-    number: 1,
     title: "5 things you can SEE",
     instruction:
       "Look around slowly. Notice five things you can see. They can be big, small, near, or far away.",
-    prompt: "Name five things you can see around you.",
   },
   {
-    number: 2,
     title: "4 things you can FEEL",
     instruction:
-      "Notice four things you can physically feel, such as your feet on the floor or your clothes against your skin.",
-    prompt: "Notice four things you can feel.",
+      "Notice four things you can physically feel, like your feet on the floor or your clothes against your skin.",
   },
   {
-    number: 3,
     title: "3 things you can HEAR",
     instruction:
       "Pause and listen carefully. Notice three sounds around you, even if they are quiet.",
-    prompt: "Listen for three sounds.",
   },
   {
-    number: 4,
     title: "2 things you can SMELL",
     instruction:
-      "Notice two scents around you, if available. You do not need to find anything special.",
-    prompt: "Notice two things you can smell.",
+      "Notice two scents around you, if available. You don't need to find anything special.",
   },
   {
-    number: 5,
     title: "1 thing you can TASTE",
     instruction:
       "Notice one taste in your mouth, or take a sip of water if you have some nearby.",
-    prompt: "Notice one thing you can taste.",
   },
 ];
 
@@ -67,48 +57,42 @@ export default function QuietComfort() {
   const [open, setOpen] = useState(true);
   const [screen, setScreen] = useState("mood");
   const [selectedMood, setSelectedMood] = useState("");
-  const [reason, setReason] = useState("");
   const [step, setStep] = useState(0);
-  const [speaking, setSpeaking] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState("");
+  const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState("");
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
-  const discardRecordingRef = useRef(false);
   const audioUrlRef = useRef("");
+  const discardRecordingRef = useRef(false);
 
-  const releaseMicrophone = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  };
+  function releaseMicrophone() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
 
-  const stopSpeaking = () => {
+  function stopSpeaking() {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     setSpeaking(false);
-  };
+  }
 
-  const clearAudio = () => {
+  function clearAudio() {
     if (audioUrlRef.current) {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = "";
     }
     setAudioUrl("");
-  };
+  }
 
-  const closePopup = () => {
+  function closePopup() {
     discardRecordingRef.current = true;
 
-    if (
-      recorderRef.current &&
-      recorderRef.current.state !== "inactive"
-    ) {
+    if (recorderRef.current?.state !== "inactive" && recorderRef.current) {
       recorderRef.current.stop();
     }
 
@@ -117,7 +101,7 @@ export default function QuietComfort() {
     clearAudio();
     setRecording(false);
     setOpen(false);
-  };
+  }
 
   useEffect(() => {
     return () => {
@@ -125,10 +109,7 @@ export default function QuietComfort() {
         window.speechSynthesis.cancel();
       }
 
-      if (
-        recorderRef.current &&
-        recorderRef.current.state !== "inactive"
-      ) {
+      if (recorderRef.current?.state !== "inactive" && recorderRef.current) {
         recorderRef.current.onstop = null;
         recorderRef.current.stop();
       }
@@ -141,9 +122,9 @@ export default function QuietComfort() {
     };
   }, []);
 
-  const speak = (text) => {
+  function speak(text) {
     if (!("speechSynthesis" in window)) {
-      setError("Spoken guidance isn't supported by this browser.");
+      setError("Spoken guidance isn't supported in this browser.");
       return;
     }
 
@@ -151,36 +132,20 @@ export default function QuietComfort() {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.9;
-    utterance.pitch = 1;
-
     utterance.onstart = () => setSpeaking(true);
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
-  };
+  }
 
-  const continueFromMood = () => {
-    if (!selectedMood) {
-      setError("Please choose how you're feeling first.");
-      return;
-    }
-
-    setError("");
-    stopSpeaking();
-
-    if (difficultMoods.includes(selectedMood)) {
-      setScreen("grounding");
-      setStep(0);
-    } else {
-      setScreen("gentle");
-    }
-  };
-
-  const startRecording = async () => {
+  async function startRecording() {
     setError("");
 
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    if (
+      !navigator.mediaDevices?.getUserMedia ||
+      !window.MediaRecorder
+    ) {
       setError("Voice recording isn't supported by this browser.");
       return;
     }
@@ -230,21 +195,38 @@ export default function QuietComfort() {
     } catch {
       releaseMicrophone();
       setError(
-        "Microphone access wasn't available. You can continue without recording."
+        "Microphone access wasn't available. You can continue without a voice note."
       );
     }
-  };
+  }
 
-  const stopRecording = () => {
+  function stopRecording() {
     if (
       recorderRef.current &&
       recorderRef.current.state !== "inactive"
     ) {
       recorderRef.current.stop();
     }
-  };
+  }
 
-  const nextStep = () => {
+  function continueFromMood() {
+    if (!selectedMood) {
+      setError("Choose how you're feeling first 💜");
+      return;
+    }
+
+    setError("");
+    stopSpeaking();
+
+    if (difficultMoods.includes(selectedMood)) {
+      setScreen("grounding");
+      setStep(0);
+    } else {
+      setScreen("gentle");
+    }
+  }
+
+  function nextStep() {
     stopSpeaking();
     setError("");
 
@@ -253,13 +235,7 @@ export default function QuietComfort() {
     } else {
       setScreen("finished");
     }
-  };
-
-  const previousStep = () => {
-    stopSpeaking();
-    setError("");
-    setStep((current) => Math.max(0, current - 1));
-  };
+  }
 
   if (!open) return null;
 
@@ -269,9 +245,7 @@ export default function QuietComfort() {
     <div
       className="qc-overlay"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          closePopup();
-        }
+        if (event.target === event.currentTarget) closePopup();
       }}
     >
       <section
@@ -284,7 +258,7 @@ export default function QuietComfort() {
           className="qc-close"
           type="button"
           onClick={closePopup}
-          aria-label="Close check-in"
+          aria-label="Close"
         >
           ×
         </button>
@@ -292,22 +266,22 @@ export default function QuietComfort() {
         {screen === "mood" && (
           <>
             <div className="qc-icon">♡</div>
-            <p className="qc-eyebrow">A MOMENT FOR YOU</p>
-
+            <p className="qc-eyebrow">YOUR SAFE SPACE</p>
             <h2 id="qc-title">How are you feeling today?</h2>
             <p className="qc-subtitle">
-              There is no right or wrong answer. Check in with yourself.
+              Take a breath. You can be honest here. There is no right or
+              wrong way to feel.
             </p>
 
             <div className="qc-moods">
               {moods.map((mood) => (
                 <button
-                  type="button"
                   key={mood}
+                  type="button"
+                  aria-pressed={selectedMood === mood}
                   className={`qc-mood ${
                     selectedMood === mood ? "selected" : ""
                   }`}
-                  aria-pressed={selectedMood === mood}
                   onClick={() => {
                     setSelectedMood(mood);
                     setError("");
@@ -318,24 +292,56 @@ export default function QuietComfort() {
               ))}
             </div>
 
-            <label className="qc-reason-label" htmlFor="qc-reason">
-              Why do you feel this way?
-              <span> (optional)</span>
-            </label>
+            <div className="qc-voice-card">
+              <div className="qc-mic-icon">🎙️</div>
+              <h3>Want to talk about it?</h3>
+              <p>
+                What made you feel this way? Leave a little voice note if
+                you'd like. You don't have to explain anything you aren't
+                comfortable sharing.
+              </p>
 
-            <textarea
-              id="qc-reason"
-              className="qc-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Anything on your mind? You can write it here..."
-              rows={3}
-            />
+              {!recording ? (
+                <button
+                  className="qc-secondary"
+                  type="button"
+                  onClick={startRecording}
+                >
+                  🎙️ Record a voice note
+                </button>
+              ) : (
+                <button
+                  className="qc-secondary qc-recording"
+                  type="button"
+                  onClick={stopRecording}
+                >
+                  ⏹ Stop recording
+                </button>
+              )}
 
-            <p className="qc-privacy">
-              Your explanation stays in this popup and isn't uploaded
-              to Firebase by this component.
-            </p>
+              {audioUrl && (
+                <div className="qc-audio">
+                  <p className="qc-recorded-label">
+                    Your voice note is ready
+                  </p>
+                  <audio controls src={audioUrl}>
+                    Audio playback isn't supported by this browser.
+                  </audio>
+                  <button
+                    className="qc-skip"
+                    type="button"
+                    onClick={clearAudio}
+                  >
+                    Delete voice note
+                  </button>
+                </div>
+              )}
+
+              <p className="qc-privacy">
+                Your voice note stays temporarily in this browser session.
+                It isn't uploaded to Firebase.
+              </p>
+            </div>
 
             {error && <p className="qc-error">{error}</p>}
 
@@ -362,14 +368,14 @@ export default function QuietComfort() {
             <p className="qc-eyebrow">QUIET COMFORT</p>
             <h2 id="qc-title">Let's take a grounding pause.</h2>
             <p className="qc-subtitle">
-              You don't have to solve everything right now. Let's focus
-              on the present, one step at a time.
+              You don't have to solve everything right now. Let's come back
+              to the present, one small step at a time.
             </p>
 
             <div className="qc-progress">
               {groundingSteps.map((item, index) => (
                 <span
-                  key={item.number}
+                  key={item.title}
                   className={index <= step ? "active" : ""}
                 />
               ))}
@@ -377,76 +383,29 @@ export default function QuietComfort() {
 
             <div className="qc-step-card">
               <div className="qc-step-number">
-                Step {step + 1} of {groundingSteps.length}
+                STEP {step + 1} OF {groundingSteps.length}
               </div>
-
               <h3>{currentStep.title}</h3>
               <p>{currentStep.instruction}</p>
-              <p className="qc-prompt">{currentStep.prompt}</p>
             </div>
 
             <button
-              className="qc-secondary"
+              className="qc-secondary qc-full"
               type="button"
               onClick={() => speak(currentStep.instruction)}
             >
-              {speaking ? "Read again 🔊" : "🔊 Read instructions aloud"}
+              {speaking ? "🔊 Read again" : "🔊 Read instructions aloud"}
             </button>
-
-            <div className="qc-record-box">
-              <p className="qc-record-title">Want to let something out?</p>
-              <p className="qc-subtitle">
-                You can record your thoughts for yourself, or skip this.
-              </p>
-
-              {!recording ? (
-                <button
-                  className="qc-secondary"
-                  type="button"
-                  onClick={startRecording}
-                >
-                  🎙️ Record my voice
-                </button>
-              ) : (
-                <button
-                  className="qc-secondary qc-recording"
-                  type="button"
-                  onClick={stopRecording}
-                >
-                  ⏹ Stop recording
-                </button>
-              )}
-
-              {audioUrl && (
-                <div className="qc-audio">
-                  <audio controls src={audioUrl}>
-                    Your browser doesn't support audio playback.
-                  </audio>
-                  <button
-                    className="qc-skip"
-                    type="button"
-                    onClick={clearAudio}
-                  >
-                    Discard recording
-                  </button>
-                </div>
-              )}
-
-              <p className="qc-privacy">
-                Recording is optional. It stays temporarily in this
-                browser session and is not uploaded by this component.
-                Closing the popup discards it.
-              </p>
-            </div>
-
-            {error && <p className="qc-error">{error}</p>}
 
             <div className="qc-actions">
               <button
                 className="qc-secondary"
                 type="button"
-                onClick={previousStep}
                 disabled={step === 0}
+                onClick={() => {
+                  stopSpeaking();
+                  setStep((current) => Math.max(0, current - 1));
+                }}
               >
                 ← Back
               </button>
@@ -462,10 +421,15 @@ export default function QuietComfort() {
               </button>
             </div>
 
+            {error && <p className="qc-error">{error}</p>}
+
             <button
               className="qc-skip"
               type="button"
-              onClick={() => setScreen("finished")}
+              onClick={() => {
+                stopSpeaking();
+                setScreen("finished");
+              }}
             >
               Skip grounding
             </button>
@@ -474,23 +438,18 @@ export default function QuietComfort() {
 
         {screen === "gentle" && (
           <>
-            <div className="qc-icon">☀</div>
+            <div className="qc-icon">✦</div>
             <p className="qc-eyebrow">A LITTLE REMINDER</p>
-            <h2 id="qc-title">It's okay to feel this way.</h2>
+            <h2 id="qc-title">
+              You deserve the good moments, too.
+            </h2>
             <p className="qc-subtitle">
-              {selectedMood === "Happy"
-                ? "Let yourself enjoy the good moments. You deserve them, too."
-                : selectedMood === "Calm"
-                ? "Take this calm with you into the rest of your day, one moment at a time."
+              {selectedMood.startsWith("😊")
+                ? "Let yourself enjoy what's going well. You don't need to feel guilty for feeling happy."
+                : selectedMood.startsWith("🌿")
+                ? "Let this calm stay with you for a little while. There's no need to rush."
                 : "You don't have to feel amazing every day. Take things at your own pace."}
             </p>
-
-            {reason.trim() && (
-              <div className="qc-step-card">
-                <p className="qc-prompt">Thank you for checking in with yourself.</p>
-              </div>
-            )}
-
             <button
               className="qc-primary"
               type="button"
@@ -507,10 +466,9 @@ export default function QuietComfort() {
             <p className="qc-eyebrow">WELL DONE</p>
             <h2 id="qc-title">You made space for yourself.</h2>
             <p className="qc-subtitle">
-              You don't need to have everything figured out. Take the
-              next part of your day one step at a time.
+              You don't need to have everything figured out. Take the next
+              part of your day one moment at a time.
             </p>
-
             <button
               className="qc-primary"
               type="button"
