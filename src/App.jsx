@@ -140,6 +140,8 @@ export default function App() {
           );
           setSelfTalk(data.selfTalk || "");
           setReflectionTime(data.reflectionTime || "9:00 PM");
+
+          // Email reminders are off unless the user explicitly enabled them.
           setReflectionEmail(data.reflectionEmail ?? false);
 
           if (!data.onboardingCompleted) {
@@ -246,6 +248,15 @@ export default function App() {
     setMessage("");
 
     try {
+      const consentAt = reflectionEmail
+        ? (
+            profile?.reflectionEmailConsentAt ||
+            (profile?.reflectionEmail !== true
+              ? serverTimestamp()
+              : null)
+          )
+        : null;
+
       const updatedProfile = {
         name: name.trim() || "Friend",
         colour,
@@ -254,6 +265,7 @@ export default function App() {
         supportStyle,
         reflectionTime,
         reflectionEmail,
+        reflectionEmailConsentAt: consentAt,
         onboardingCompleted: true,
         updatedAt: serverTimestamp(),
       };
@@ -514,12 +526,22 @@ export default function App() {
     setError("");
     setMessage("");
 
+    const consentAt = reflectionEmail
+      ? (
+          profile?.reflectionEmailConsentAt ||
+          (profile?.reflectionEmail !== true
+            ? serverTimestamp()
+            : null)
+        )
+      : null;
+
     const updatedSettings = {
       name: name.trim() || "Friend",
       colour,
       supportStyle,
       reflectionTime,
       reflectionEmail,
+      reflectionEmailConsentAt: consentAt,
       updatedAt: serverTimestamp(),
     };
 
@@ -541,7 +563,6 @@ export default function App() {
       setError("Couldn't save your settings.");
     }
   }
-
   if (loading) {
     return (
       <main className="vc-shell">
@@ -945,9 +966,8 @@ export default function App() {
           )}
         </section>
       )}
-
-      {/* Vibe Buddy */}
-      {page === "buddy" && (
+            {/* Vibe Buddy */}
+            {page === "buddy" && (
         <section className="vc-card">
           <p className="vc-eyebrow">FRIENDSHIP, NOT FIXING</p>
           <h2>Your Vibe Buddy 🤝</h2>
