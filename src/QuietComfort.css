@@ -2,199 +2,221 @@
 .qc-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000;
-    display: grid;
-    place-items: center;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
     overflow-y: auto;
-    padding: 18px;
-    background: #090615df;
-    backdrop-filter: blur(8px);
+    background: rgba(24, 31, 42, 0.58);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
   }
   
   .qc-modal {
     position: relative;
-    width: min(100%, 480px);
-    max-height: calc(100dvh - 36px);
+    width: 100%;
+    max-width: 540px;
+    max-height: calc(100vh - 40px);
     overflow-y: auto;
-    box-sizing: border-box;
-    padding: 28px;
-    border: 1px solid #cbb6f344;
-    border-radius: 24px;
-    color: #f5f1ff;
-    background: linear-gradient(145deg, #211633, #100c20);
-    box-shadow: 0 20px 70px #0008;
-    font-family: "DM Sans", sans-serif;
+    padding: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 25px;
+    background: #fffdfb;
+    color: #30343b;
+    box-shadow: 0 24px 80px rgba(18, 27, 40, 0.25);
+    text-align: center;
+    animation: qc-appear 0.25s ease-out;
+  }
+  
+  @keyframes qc-appear {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+  
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
   
   .qc-close {
     position: absolute;
-    top: 10px;
-    right: 14px;
-    border: 0;
-    color: #eee2ff;
+    top: 13px;
+    right: 17px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
     background: transparent;
-    font-size: 28px;
+    color: #686d75;
+    font-size: 29px;
+    line-height: 1;
     cursor: pointer;
   }
   
-  .qc-eyebrow,
-  .qc-step-count,
-  .qc-sense {
-    color: #cbb4ff;
+  .qc-close:hover {
+    background: #f1eeeb;
+  }
+  
+  .qc-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    background: #f3e8e5;
+    color: #9d625a;
+    font-size: 31px;
+  }
+  
+  .qc-eyebrow {
+    margin: 0 0 10px;
+    color: #9d746b;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
+    font-weight: 800;
+    letter-spacing: 2px;
   }
   
   .qc-modal h2 {
-    margin: 14px 20px;
-    text-align: center;
-    font-size: 25px;
+    margin: 0 auto 11px;
+    max-width: 420px;
+    color: #30343b;
+    font-size: clamp(24px, 5vw, 31px);
+    font-weight: 700;
+    line-height: 1.25;
   }
   
-  .qc-muted,
-  .qc-modal > .qc-eyebrow,
-  .qc-step-count,
-  .qc-sense,
-  .qc-prompt {
-    text-align: center;
-  }
-  
-  .qc-muted,
-  .qc-privacy {
-    color: #bdb0d1;
-    font-size: 13px;
-    line-height: 1.7;
+  .qc-subtitle {
+    margin: 0 auto 23px;
+    color: #777982;
+    font-size: 14px;
+    line-height: 1.65;
   }
   
   .qc-moods {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 22px;
-  }
-  
-  .qc-moods button {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 9px;
-    min-height: 49px;
-    padding: 10px;
-    border: 1px solid #bda0fa40;
-    border-radius: 12px;
-    color: #f5f1ff;
-    background: #a78bfa0d;
+    margin: 22px 0 25px;
+  }
+  
+  .qc-mood {
+    padding: 10px 14px;
+    border: 1px solid #e7e1dd;
+    border-radius: 22px;
+    background: #fff;
+    color: #555761;
     font: inherit;
+    font-size: 13px;
     cursor: pointer;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
   }
   
-  .qc-moods button:hover,
-  .qc-secondary:hover {
-    background: #a78bfa25;
+  .qc-mood:hover {
+    border-color: #c7a29a;
+    transform: translateY(-1px);
   }
   
-  .qc-moods button span {
-    font-size: 21px;
-  }
-  
-  .qc-progress {
-    height: 5px;
-    margin: 22px 0;
-    overflow: hidden;
-    border-radius: 10px;
-    background: #40334f;
-  }
-  
-  .qc-progress span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #a78bfa, #e0b9f6);
-    transition: width 0.25s ease;
-  }
-  
-  .qc-number {
-    display: grid;
-    place-items: center;
-    width: 74px;
-    height: 74px;
-    margin: 12px auto;
-    border-radius: 50%;
-    color: #fff;
-    background: radial-gradient(circle at 30% 25%, #d8c5ff, #7851b9);
-    font-size: 34px;
+  .qc-mood.selected {
+    border-color: #a86f65;
+    background: #f4e7e3;
+    color: #77483f;
     font-weight: 700;
   }
   
-  .qc-prompt {
-    min-height: 48px;
-    font-size: 17px;
+  .qc-reason-label {
+    display: block;
+    margin: 0 0 9px;
+    color: #41444b;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+  }
+  
+  .qc-reason-label span {
+    color: #8a8c93;
+    font-weight: 400;
+  }
+  
+  .qc-reason {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 95px;
+    padding: 13px 14px;
+    resize: vertical;
+    border: 1px solid #e5dfda;
+    border-radius: 12px;
+    outline: none;
+    background: #fff;
+    color: #30343b;
+    font: inherit;
+    font-size: 14px;
     line-height: 1.6;
   }
   
-  .qc-recorder {
-    margin-top: 22px;
-    padding: 17px;
-    border: 1px solid #bda0fa30;
-    border-radius: 16px;
-    background: #a78bfa0d;
+  .qc-reason:focus {
+    border-color: #b27f74;
+    box-shadow: 0 0 0 3px rgba(178, 127, 116, 0.13);
   }
   
-  .qc-recorder h3 {
-    margin-top: 0;
+  .qc-reason::placeholder {
+    color: #a0a0a5;
   }
   
-  .qc-record,
-  .qc-stop,
-  .qc-next,
+  .qc-privacy {
+    margin: 10px 0 18px;
+    color: #898991;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  
+  .qc-primary,
   .qc-secondary {
-    min-height: 42px;
-    padding: 10px 15px;
-    border: 1px solid #bda0fa50;
-    border-radius: 11px;
-    color: #f5f1ff;
-    background: #302047;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 45px;
+    padding: 12px 18px;
+    border-radius: 12px;
     font: inherit;
-    cursor: pointer;
-  }
-  
-  .qc-record,
-  .qc-stop {
-    width: 100%;
-  }
-  
-  .qc-stop {
-    background: #6b294f;
-  }
-  
-  .qc-recording-status {
-    color: #e0b9f6;
-    font-size: 12px;
-    text-align: center;
-  }
-  
-  .qc-playback {
-    margin-top: 14px;
-    font-size: 13px;
-  }
-  
-  .qc-playback audio {
-    display: block;
-    width: 100%;
-    margin: 10px 0;
-  }
-  
-  .qc-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  
-  .qc-next {
-    color: #1a1030;
-    background: linear-gradient(105deg, #bda0fa, #e0b9f6);
+    font-size: 14px;
     font-weight: 700;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease;
+  }
+  
+  .qc-primary {
+    width: 100%;
+    border: 1px solid #8e5e56;
+    background: #8e5e56;
+    color: #fff;
+  }
+  
+  .qc-primary:hover {
+    background: #754a43;
+    transform: translateY(-1px);
+  }
+  
+  .qc-secondary {
+    border: 1px solid #e2d8d2;
+    background: #fff;
+    color: #6c514a;
+  }
+  
+  .qc-secondary:hover:not(:disabled) {
+    background: #f7efeb;
   }
   
   .qc-secondary:disabled {
@@ -204,37 +226,189 @@
   
   .qc-skip {
     display: block;
-    margin: 16px auto 0;
-    border: 0;
-    color: #cfb4ff;
+    margin: 13px auto 0;
+    padding: 6px 10px;
+    border: none;
     background: transparent;
+    color: #85858c;
     font: inherit;
+    font-size: 13px;
     cursor: pointer;
   }
   
-  .qc-privacy {
-    margin-bottom: 0;
-    font-size: 11px;
+  .qc-skip:hover {
+    color: #754a43;
+    text-decoration: underline;
   }
   
   .qc-error {
-    color: #ffb4c0;
+    margin: 12px 0;
+    color: #b23c3c;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  .qc-progress {
+    display: flex;
+    gap: 7px;
+    margin: 22px 0;
+  }
+  
+  .qc-progress span {
+    flex: 1;
+    height: 5px;
+    border-radius: 10px;
+    background: #e9e5e1;
+  }
+  
+  .qc-progress span.active {
+    background: #a8756a;
+  }
+  
+  .qc-step-card {
+    padding: 24px 20px;
+    border: 1px solid #eee3de;
+    border-radius: 17px;
+    background: #faf3ef;
+    text-align: left;
+  }
+  
+  .qc-step-number {
+    margin-bottom: 10px;
+    color: #a07065;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  
+  .qc-step-card h3 {
+    margin: 0 0 12px;
+    color: #493a36;
+    font-size: 22px;
+    line-height: 1.35;
+  }
+  
+  .qc-step-card p {
+    color: #6f6663;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  
+  .qc-step-card .qc-prompt {
+    margin: 16px 0 0;
+    color: #77544c;
+    font-weight: 700;
+  }
+  
+  .qc-modal > .qc-secondary {
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .qc-record-box {
+    margin-top: 19px;
+    padding: 18px;
+    border: 1px solid #eee8e3;
+    border-radius: 15px;
+    background: #fff;
+  }
+  
+  .qc-record-title {
+    margin: 0 0 7px;
+    color: #48464b;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .qc-record-box .qc-subtitle {
+    margin-bottom: 13px;
     font-size: 12px;
-    line-height: 1.6;
+  }
+  
+  .qc-recording {
+    border-color: #d6a4a0;
+    background: #fff1f0;
+    color: #a04444;
+  }
+  
+  .qc-audio {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+  }
+  
+  .qc-audio audio {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .qc-audio .qc-skip {
+    margin-top: 0;
+  }
+  
+  .qc-record-box .qc-privacy {
+    margin-bottom: 0;
+  }
+  
+  .qc-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .qc-actions > button {
+    flex: 1;
+  }
+  
+  .qc-next {
+    flex: 1.5 !important;
   }
   
   @media (max-width: 480px) {
-    .qc-modal {
-      padding: 23px 18px;
+    .qc-overlay {
+      align-items: center;
+      padding: 10px;
     }
   
-    .qc-modal h2 {
-      font-size: 22px;
+    .qc-modal {
+      max-height: calc(100dvh - 20px);
+      padding: 28px 19px 23px;
+      border-radius: 20px;
+    }
+  
+    .qc-moods {
+      gap: 7px;
+    }
+  
+    .qc-mood {
+      padding: 9px 11px;
+      font-size: 12px;
+    }
+  
+    .qc-step-card {
+      padding: 20px 16px;
+    }
+  
+    .qc-actions {
+      gap: 8px;
+    }
+  
+    .qc-primary,
+    .qc-secondary {
+      padding: 11px 12px;
+      font-size: 13px;
     }
   }
   
   @media (prefers-reduced-motion: reduce) {
-    .qc-progress span {
+    .qc-modal {
+      animation: none;
+    }
+  
+    .qc-mood,
+    .qc-primary,
+    .qc-secondary {
       transition: none;
     }
   }
