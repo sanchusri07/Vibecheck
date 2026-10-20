@@ -1,0 +1,241 @@
+
+.qc-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: 18px;
+    background: #090615df;
+    backdrop-filter: blur(8px);
+  }
+  
+  .qc-modal {
+    position: relative;
+    width: min(100%, 480px);
+    max-height: calc(100dvh - 36px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 28px;
+    border: 1px solid #cbb6f344;
+    border-radius: 24px;
+    color: #f5f1ff;
+    background: linear-gradient(145deg, #211633, #100c20);
+    box-shadow: 0 20px 70px #0008;
+    font-family: "DM Sans", sans-serif;
+  }
+  
+  .qc-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: 0;
+    color: #eee2ff;
+    background: transparent;
+    font-size: 28px;
+    cursor: pointer;
+  }
+  
+  .qc-eyebrow,
+  .qc-step-count,
+  .qc-sense {
+    color: #cbb4ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+  
+  .qc-modal h2 {
+    margin: 14px 20px;
+    text-align: center;
+    font-size: 25px;
+  }
+  
+  .qc-muted,
+  .qc-modal > .qc-eyebrow,
+  .qc-step-count,
+  .qc-sense,
+  .qc-prompt {
+    text-align: center;
+  }
+  
+  .qc-muted,
+  .qc-privacy {
+    color: #bdb0d1;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  
+  .qc-moods {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 22px;
+  }
+  
+  .qc-moods button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 49px;
+    padding: 10px;
+    border: 1px solid #bda0fa40;
+    border-radius: 12px;
+    color: #f5f1ff;
+    background: #a78bfa0d;
+    font: inherit;
+    cursor: pointer;
+  }
+  
+  .qc-moods button:hover,
+  .qc-secondary:hover {
+    background: #a78bfa25;
+  }
+  
+  .qc-moods button span {
+    font-size: 21px;
+  }
+  
+  .qc-progress {
+    height: 5px;
+    margin: 22px 0;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #40334f;
+  }
+  
+  .qc-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #a78bfa, #e0b9f6);
+    transition: width 0.25s ease;
+  }
+  
+  .qc-number {
+    display: grid;
+    place-items: center;
+    width: 74px;
+    height: 74px;
+    margin: 12px auto;
+    border-radius: 50%;
+    color: #fff;
+    background: radial-gradient(circle at 30% 25%, #d8c5ff, #7851b9);
+    font-size: 34px;
+    font-weight: 700;
+  }
+  
+  .qc-prompt {
+    min-height: 48px;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  
+  .qc-recorder {
+    margin-top: 22px;
+    padding: 17px;
+    border: 1px solid #bda0fa30;
+    border-radius: 16px;
+    background: #a78bfa0d;
+  }
+  
+  .qc-recorder h3 {
+    margin-top: 0;
+  }
+  
+  .qc-record,
+  .qc-stop,
+  .qc-next,
+  .qc-secondary {
+    min-height: 42px;
+    padding: 10px 15px;
+    border: 1px solid #bda0fa50;
+    border-radius: 11px;
+    color: #f5f1ff;
+    background: #302047;
+    font: inherit;
+    cursor: pointer;
+  }
+  
+  .qc-record,
+  .qc-stop {
+    width: 100%;
+  }
+  
+  .qc-stop {
+    background: #6b294f;
+  }
+  
+  .qc-recording-status {
+    color: #e0b9f6;
+    font-size: 12px;
+    text-align: center;
+  }
+  
+  .qc-playback {
+    margin-top: 14px;
+    font-size: 13px;
+  }
+  
+  .qc-playback audio {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+  }
+  
+  .qc-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .qc-next {
+    color: #1a1030;
+    background: linear-gradient(105deg, #bda0fa, #e0b9f6);
+    font-weight: 700;
+  }
+  
+  .qc-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .qc-skip {
+    display: block;
+    margin: 16px auto 0;
+    border: 0;
+    color: #cfb4ff;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+  
+  .qc-privacy {
+    margin-bottom: 0;
+    font-size: 11px;
+  }
+  
+  .qc-error {
+    color: #ffb4c0;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 480px) {
+    .qc-modal {
+      padding: 23px 18px;
+    }
+  
+    .qc-modal h2 {
+      font-size: 22px;
+    }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .qc-progress span {
+      transition: none;
+    }
+  }
+  
