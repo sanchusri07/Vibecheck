@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   addDoc,
@@ -23,55 +23,28 @@ const MOODS = [
   { name: "Excited", emoji: "✨", color: "#E5A9C8" },
 ];
 
-const SOOTHING_SOUNDS = [
-  { id: "rain", name: "Gentle Rain", emoji: "🌧️", description: "Soft, steady rainfall." },
-  { id: "waves", name: "Ocean Waves", emoji: "🌊", description: "A gentle ocean-like ambience." },
-  { id: "birds", name: "Forest Birds", emoji: "🐦", description: "Soft forest ambience." },
-  { id: "fireplace", name: "Fireplace", emoji: "🔥", description: "Gentle crackling-like ambience." },
-  { id: "crickets", name: "Night Crickets", emoji: "🌙", description: "A quiet nighttime ambience." },
-];
-
-const GROUNDING_STEPS = [
-  {
-    count: 5,
-    title: "5 things you can see",
-    prompt: "Slowly look around. Notice five things you can see.",
-  },
-  {
-    count: 4,
-    title: "4 things you can feel",
-    prompt: "Notice four things you can physically feel, like your feet on the floor.",
-  },
-  {
-    count: 3,
-    title: "3 things you can hear",
-    prompt: "Listen quietly for three sounds around you.",
-  },
-  {
-    count: 2,
-    title: "2 things you can smell",
-    prompt: "Notice two scents, or two things whose scent you like.",
-  },
-  {
-    count: 1,
-    title: "1 thing you can taste",
-    prompt: "Notice one taste in your mouth, or take a sip of water and notice it.",
-  },
-];
-
-const todayKey = () => {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-};
+const todayKey = () => new Date().toLocaleDateString("en-CA");
 
 const HELPLINES = [
-  { name: "Tele-MANAS — India", number: "14416", detail: "Free mental health support, available 24/7." },
-  { name: "Emergency services — India", number: "112", detail: "For immediate danger or an urgent emergency." },
+  {
+    name: "Tele-MANAS — India",
+    number: "14416",
+    detail: "Free mental health support, available 24/7.",
+  },
+  {
+    name: "Emergency services — India",
+    number: "112",
+    detail: "For immediate danger or an urgent emergency.",
+  },
 ];
 
 function BlackDog({ small = false }) {
   return (
-    <div className={`vc-dog ${small ? "vc-dog-small" : ""}`} aria-label="Cute black dog companion" role="img">
+    <div
+      className={`vc-dog ${small ? "vc-dog-small" : ""}`}
+      aria-label="Cute black dog companion"
+      role="img"
+    >
       <span className="vc-dog-ear vc-dog-ear-left" />
       <span className="vc-dog-ear vc-dog-ear-right" />
       <span className="vc-dog-face">
@@ -88,121 +61,6 @@ function BlackDog({ small = false }) {
   );
 }
 
-/* Browser-generated ambience; no external audio files are needed. */
-function createAmbientSound(type, volume) {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) throw new Error("Your browser does not support generated audio.");
-
-  const context = new AudioContextClass();
-  const master = context.createGain();
-  master.gain.value = Math.max(0, Math.min(1, volume)) * 0.22;
-  master.connect(context.destination);
-
-  const nodes = [];
-  let stopped = false;
-  let timer = null;
-
-  function addNoise({ frequency = 1000, q = 0.5, gain = 0.2, filter = "lowpass" } = {}) {
-    const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-
-    const source = context.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    const biquad = context.createBiquadFilter();
-    biquad.type = filter;
-    biquad.frequency.value = frequency;
-    biquad.Q.value = q;
-
-    const level = context.createGain();
-    level.gain.value = gain;
-
-    source.connect(biquad);
-    biquad.connect(level);
-    level.connect(master);
-    source.start();
-    nodes.push(source, biquad, level);
-    return { source, biquad, level };
-  }
-
-  if (type === "rain") {
-    addNoise({ frequency: 1400, gain: 0.42 });
-    addNoise({ frequency: 350, gain: 0.25 });
-  } else if (type === "waves") {
-    const noise = addNoise({ frequency: 600, gain: 0.42 });
-    const swell = context.createOscillator();
-    const swellGain = context.createGain();
-    swell.frequency.value = 0.09;
-    swellGain.gain.value = 0.17;
-    swell.connect(swellGain);
-    swellGain.connect(noise.level.gain);
-    swell.start();
-    nodes.push(swell, swellGain);
-  } else if (type === "birds") {
-    addNoise({ frequency: 500, gain: 0.08 });
-    const chirp = () => {
-      if (stopped || context.state === "closed") return;
-      const oscillator = context.createOscillator();
-      const level = context.createGain();
-      const now = context.currentTime;
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(1800 + Math.random() * 1200, now);
-      oscillator.frequency.exponentialRampToValueAtTime(900 + Math.random() * 500, now + 0.12);
-      level.gain.setValueAtTime(0.0001, now);
-      level.gain.exponentialRampToValueAtTime(0.07, now + 0.025);
-      level.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-      oscillator.connect(level);
-      level.connect(master);
-      oscillator.start(now);
-      oscillator.stop(now + 0.18);
-      nodes.push(oscillator, level);
-      timer = setTimeout(chirp, 350 + Math.random() * 1300);
-    };
-    chirp();
-  } else if (type === "fireplace") {
-    addNoise({ frequency: 800, gain: 0.18 });
-    addNoise({ frequency: 2500, gain: 0.1, filter: "highpass" });
-  } else if (type === "crickets") {
-    addNoise({ frequency: 500, gain: 0.04 });
-    const cricket = () => {
-      if (stopped || context.state === "closed") return;
-      const oscillator = context.createOscillator();
-      const level = context.createGain();
-      const now = context.currentTime;
-      oscillator.type = "sine";
-      oscillator.frequency.value = 4200 + Math.random() * 900;
-      level.gain.setValueAtTime(0.0001, now);
-      level.gain.linearRampToValueAtTime(0.045, now + 0.025);
-      level.gain.linearRampToValueAtTime(0.0001, now + 0.12);
-      oscillator.connect(level);
-      level.connect(master);
-      oscillator.start(now);
-      oscillator.stop(now + 0.13);
-      nodes.push(oscillator, level);
-      timer = setTimeout(cricket, 250 + Math.random() * 600);
-    };
-    cricket();
-  }
-
-  return {
-    context,
-    setVolume(value) {
-      master.gain.setTargetAtTime(Math.max(0, Math.min(1, value)) * 0.22, context.currentTime, 0.04);
-    },
-    async stop() {
-      stopped = true;
-      if (timer) clearTimeout(timer);
-      nodes.forEach((node) => {
-        try { if (typeof node.stop === "function") node.stop(); } catch {}
-        try { node.disconnect(); } catch {}
-      });
-      try { if (context.state !== "closed") await context.close(); } catch {}
-    },
-  };
-}
-
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -214,9 +72,16 @@ function App() {
   const [checkinText, setCheckinText] = useState("");
   const [todayCheckin, setTodayCheckin] = useState(null);
 
-  const [showMoodPopup, setShowMoodPopup] = useState(false);
-  const [showGroundingPopup, setShowGroundingPopup] = useState(false);
-  const [groundingStep, setGroundingStep] = useState(0);
+  // NEW: Saved check-ins for the Mood Calendar.
+  const [allCheckins, setAllCheckins] = useState([]);
+
+  // NEW: Independent calendar month and selected date.
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedCalendarDate, setSelectedCalendarDate] =
+    useState(todayKey());
 
   const [journalText, setJournalText] = useState("");
   const [journalMood, setJournalMood] = useState("");
@@ -231,23 +96,14 @@ function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       role: "assistant",
-      content: "Hey, friend 🐾 I'm your little black-dog companion. You don't need to explain everything perfectly. What's on your mind?",
+      content:
+        "Hey, friend 🐾 I'm your little black-dog companion. You don't need to explain everything perfectly. What's on your mind?",
     },
   ]);
 
   const [breathing, setBreathing] = useState(false);
   const [breathPhase, setBreathPhase] = useState("Ready when you are");
   const [breathCount, setBreathCount] = useState(0);
-
-  const [activeSound, setActiveSound] = useState("rain");
-  const [customSound, setCustomSound] = useState(null);
-  const [soundVolume, setSoundVolume] = useState(0.5);
-  const [soundError, setSoundError] = useState("");
-  const [soundPlaying, setSoundPlaying] = useState(false);
-
-  const ambientRef = useRef(null);
-  const uploadAudioRef = useRef(null);
-  const customUrlRef = useRef(null);
 
   const uid = user?.uid;
 
@@ -256,70 +112,81 @@ function App() {
       setUser(currentUser);
       setAuthLoading(false);
     });
+
     return unsubscribe;
   }, []);
 
-  // Show the mood popup when authentication finishes for a signed-in user.
   useEffect(() => {
-    if (!authLoading && user) {
-      setShowMoodPopup(true);
-      setShowGroundingPopup(false);
+    if (!uid) {
+      setAllCheckins([]);
+      setJournalEntries([]);
+      setContacts([]);
+      setTodayCheckin(null);
+      return;
     }
-  }, [authLoading, user]);
 
-  useEffect(() => {
-    if (!uid) return;
     let active = true;
 
     async function loadData() {
       try {
-        const [checkinSnapshot, journalSnapshot, contactSnapshot] = await Promise.all([
-          getDocs(collection(db, "users", uid, "checkins")),
-          getDocs(query(collection(db, "users", uid, "journals"), orderBy("createdAt", "desc"))),
-          getDocs(collection(db, "users", uid, "emergencyContacts")),
-        ]);
+        const [checkinSnapshot, journalSnapshot, contactSnapshot] =
+          await Promise.all([
+            getDocs(collection(db, "users", uid, "checkins")),
+            getDocs(
+              query(
+                collection(db, "users", uid, "journals"),
+                orderBy("createdAt", "desc")
+              )
+            ),
+            getDocs(
+              collection(db, "users", uid, "emergencyContacts")
+            ),
+          ]);
 
         if (!active) return;
 
-        const checkins = checkinSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        const existingCheckin = checkins.find((item) => item.date === todayKey()) || null;
+        const checkins = checkinSnapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
 
-        setTodayCheckin(existingCheckin);
-        if (existingCheckin) {
-          setSelectedMood(existingCheckin.mood || "");
-          setCheckinText(existingCheckin.reflection || "");
-        }
+        // NEW: Keep all saved check-ins available to the calendar.
+        setAllCheckins(checkins);
 
-        setJournalEntries(journalSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
-        setContacts(contactSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+        setTodayCheckin(
+          checkins.find((item) => item.date === todayKey()) || null
+        );
+
+        setJournalEntries(
+          journalSnapshot.docs.map((item) => ({
+            id: item.id,
+            ...item.data(),
+          }))
+        );
+
+        setContacts(
+          contactSnapshot.docs.map((item) => ({
+            id: item.id,
+            ...item.data(),
+          }))
+        );
       } catch (error) {
         console.error("Could not load VibeCheck data:", error);
-        if (active) setNotice("We couldn't load some saved data. Please check your connection and Firestore rules.");
+
+        if (active) {
+          setNotice(
+            "We couldn't load some saved data. Please check your connection and Firestore rules."
+          );
+        }
       }
     }
 
     loadData();
-    return () => { active = false; };
-  }, [uid]);
 
-  useEffect(() => {
     return () => {
-      if (ambientRef.current) {
-        ambientRef.current.stop();
-        ambientRef.current = null;
-      }
-      if (customUrlRef.current) {
-        URL.revokeObjectURL(customUrlRef.current);
-        customUrlRef.current = null;
-      }
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      active = false;
     };
-  }, []);
-
-  useEffect(() => {
-    if (ambientRef.current) ambientRef.current.setVolume(soundVolume);
-    if (uploadAudioRef.current) uploadAudioRef.current.volume = soundVolume;
-  }, [soundVolume]);
+  }, [uid]);
 
   const entriesForSelectedDate = useMemo(
     () => journalEntries.filter((entry) => entry.date === calendarDate),
@@ -328,15 +195,20 @@ function App() {
 
   const monthEntries = useMemo(() => {
     const prefix = calendarDate.slice(0, 7);
-    return journalEntries.filter((entry) => String(entry.date || "").startsWith(prefix));
+
+    return journalEntries.filter((entry) =>
+      String(entry.date || "").startsWith(prefix)
+    );
   }, [journalEntries, calendarDate]);
 
   async function saveCheckin() {
     if (!uid) return;
+
     if (!selectedMood) {
       setNotice("Choose the vibe that feels closest to how you feel today.");
       return;
     }
+
     if (!checkinText.trim()) {
       setNotice("Add a few words about what's on your mind today.");
       return;
@@ -353,9 +225,25 @@ function App() {
     };
 
     try {
-      await setDoc(doc(db, "users", uid, "checkins", todayKey()), data);
+      await setDoc(
+        doc(db, "users", uid, "checkins", todayKey()),
+        data
+      );
+
       setTodayCheckin({ ...data });
-      setNotice("Your check-in is saved. Thank you for pausing for yourself ✨");
+
+      // NEW: Update the calendar immediately after saving a check-in.
+      setAllCheckins((previous) => {
+        const remaining = previous.filter(
+          (item) => item.date !== data.date
+        );
+
+        return [...remaining, { ...data, id: data.date }];
+      });
+
+      setNotice(
+        "Your check-in is saved. Thank you for pausing for yourself ✨"
+      );
     } catch (error) {
       console.error(error);
       setNotice("Your check-in couldn't be saved. Please try again.");
@@ -366,6 +254,7 @@ function App() {
 
   async function saveJournal() {
     if (!uid) return;
+
     if (!journalText.trim()) {
       setNotice("Write a little something before saving your journal.");
       return;
@@ -382,9 +271,17 @@ function App() {
         createdAt: serverTimestamp(),
       };
 
-      const saved = await addDoc(collection(db, "users", uid, "journals"), data);
+      const saved = await addDoc(
+        collection(db, "users", uid, "journals"),
+        data
+      );
+
       setJournalEntries((previous) => [
-        { ...data, id: saved.id, createdAt: new Date() },
+        {
+          ...data,
+          id: saved.id,
+          createdAt: new Date(),
+        },
         ...previous,
       ]);
 
@@ -402,6 +299,7 @@ function App() {
 
   async function saveContact() {
     if (!uid) return;
+
     if (!contactName.trim() || !contactPhone.trim()) {
       setNotice("Please add both a contact name and a phone number.");
       return;
@@ -417,8 +315,16 @@ function App() {
         createdAt: serverTimestamp(),
       };
 
-      const saved = await addDoc(collection(db, "users", uid, "emergencyContacts"), data);
-      setContacts((previous) => [...previous, { ...data, id: saved.id }]);
+      const saved = await addDoc(
+        collection(db, "users", uid, "emergencyContacts"),
+        data
+      );
+
+      setContacts((previous) => [
+        ...previous,
+        { ...data, id: saved.id },
+      ]);
+
       setContactName("");
       setContactPhone("");
       setNotice("Your contact has been saved.");
@@ -432,10 +338,15 @@ function App() {
 
   async function sendChatMessage(event) {
     event?.preventDefault();
+
     const message = chatInput.trim();
     if (!message || busy) return;
 
-    const updatedMessages = [...chatMessages, { role: "user", content: message }];
+    const updatedMessages = [
+      ...chatMessages,
+      { role: "user", content: message },
+    ];
+
     setChatMessages(updatedMessages);
     setChatInput("");
     setBusy(true);
@@ -446,22 +357,38 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: updatedMessages.map(({ role, content }) => ({ role, content })),
+          messages: updatedMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
         }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "The chat service is unavailable.");
+
+      if (!response.ok) {
+        throw new Error(data.error || "The chat service is unavailable.");
+      }
 
       setChatMessages((previous) => [
         ...previous,
-        { role: "assistant", content: data.reply || "I'm here with you. Want to tell me a little more?" },
+        {
+          role: "assistant",
+          content:
+            data.reply ||
+            "I'm here with you. Want to tell me a little more?",
+        },
       ]);
     } catch (error) {
       console.error(error);
+
       setChatMessages((previous) => [
         ...previous,
-        { role: "assistant", content: "My little paws got tangled connecting just now 🐾 Please try again in a moment." },
+        {
+          role: "assistant",
+          content:
+            "Oh, my little paws got tangled connecting just now 🐾 Please try again in a moment. You can still take a slow breath while we reconnect.",
+        },
       ]);
     } finally {
       setBusy(false);
@@ -481,8 +408,10 @@ function App() {
 
     function nextPhase() {
       const phase = phases[phaseIndex];
+
       setBreathPhase(phase.label);
       if (phase.count) setBreathCount((count) => count + 1);
+
       timeout = setTimeout(() => {
         phaseIndex = (phaseIndex + 1) % phases.length;
         nextPhase();
@@ -490,138 +419,13 @@ function App() {
     }
 
     nextPhase();
+
     return () => clearTimeout(timeout);
   }, [breathing]);
 
   function stopBreathing() {
     setBreathing(false);
     setBreathPhase("Ready when you are");
-  }
-
-  async function stopSound() {
-    if (ambientRef.current) {
-      const sound = ambientRef.current;
-      ambientRef.current = null;
-      await sound.stop();
-    }
-    if (uploadAudioRef.current) {
-      uploadAudioRef.current.pause();
-      uploadAudioRef.current.currentTime = 0;
-    }
-    setSoundPlaying(false);
-  }
-
-  async function playSelectedSound() {
-    setSoundError("");
-
-    if (soundPlaying) {
-      await stopSound();
-      return;
-    }
-
-    try {
-      if (activeSound === "custom") {
-        if (!customSound) {
-          setSoundError("Choose an audio file from your device first.");
-          return;
-        }
-
-        const audio = uploadAudioRef.current;
-        if (!audio) {
-          setSoundError("The uploaded audio player isn't ready. Please select the file again.");
-          return;
-        }
-
-        audio.volume = soundVolume;
-        audio.currentTime = 0;
-        await audio.play();
-        setSoundPlaying(true);
-        return;
-      }
-
-      const sound = createAmbientSound(activeSound, soundVolume);
-      ambientRef.current = sound;
-      await sound.context.resume();
-      setSoundPlaying(true);
-    } catch (error) {
-      console.error("Audio playback failed:", error);
-      if (ambientRef.current) {
-        await ambientRef.current.stop();
-        ambientRef.current = null;
-      }
-      setSoundPlaying(false);
-      setSoundError(error.message || "Audio could not be played. Please try again.");
-    }
-  }
-
-  function selectSound(id) {
-    stopSound();
-    setActiveSound(id);
-    setSoundError("");
-  }
-
-  function handleSoundUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("audio/")) {
-      setSoundError("Please choose a valid audio file.");
-      event.target.value = "";
-      return;
-    }
-
-    stopSound();
-
-    if (customUrlRef.current) URL.revokeObjectURL(customUrlRef.current);
-    const url = URL.createObjectURL(file);
-    customUrlRef.current = url;
-
-    setCustomSound({
-      id: "custom",
-      name: file.name.replace(/\.[^/.]+$/, ""),
-      emoji: "🎵",
-      description: "Your own sound, ready for a quiet moment.",
-      src: url,
-    });
-    setActiveSound("custom");
-    setSoundError("");
-    event.target.value = "";
-  }
-
-  function closeMoodPopup() {
-    setShowMoodPopup(false);
-    setShowGroundingPopup(false);
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  }
-
-  function continueFromMood() {
-    if (!selectedMood) return;
-
-    if (["Anxious", "Sad", "Tired"].includes(selectedMood)) {
-      setShowGroundingPopup(true);
-      setGroundingStep(0);
-    } else {
-      closeMoodPopup();
-      setPage("home");
-    }
-  }
-
-  function advanceGrounding() {
-    const step = GROUNDING_STEPS[groundingStep];
-
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const speech = new SpeechSynthesisUtterance(step.prompt);
-      speech.rate = 0.9;
-      window.speechSynthesis.speak(speech);
-    }
-
-    if (groundingStep < GROUNDING_STEPS.length - 1) {
-      setGroundingStep((previous) => previous + 1);
-    } else {
-      closeMoodPopup();
-      setPage("home");
-    }
   }
 
   function renderHome() {
@@ -631,22 +435,30 @@ function App() {
           <div>
             <p className="vc-eyebrow">A LITTLE SPACE FOR YOU</p>
             <h2>Hey there, stargazer ✨</h2>
-            <p className="vc-muted">You don't have to figure everything out today. Take five minutes to check in, breathe, or simply be.</p>
+            <p className="vc-muted">
+              You don't have to figure everything out today. Take five
+              minutes to check in, breathe, or simply be.
+            </p>
           </div>
+
           <BlackDog />
         </section>
 
         <section className="vc-card">
           <p className="vc-eyebrow">YOUR DAILY PAUSE</p>
           <h2>How are you feeling today?</h2>
-          <p className="vc-muted">There are no right or wrong answers. Pick whatever feels closest.</p>
+          <p className="vc-muted">
+            There are no right or wrong answers. Pick whatever feels closest.
+          </p>
 
           <div className="vc-moods">
             {MOODS.map((mood) => (
               <button
                 key={mood.name}
                 type="button"
-                className={`vc-mood-option ${selectedMood === mood.name ? "selected" : ""}`}
+                className={`vc-mood-option ${
+                  selectedMood === mood.name ? "selected" : ""
+                }`}
                 onClick={() => setSelectedMood(mood.name)}
                 style={{ "--mood-color": mood.color }}
               >
@@ -656,7 +468,10 @@ function App() {
             ))}
           </div>
 
-          <label htmlFor="daily-reflection">What's making you feel this way today?</label>
+          <label htmlFor="daily-reflection">
+            What's making you feel this way today?
+          </label>
+
           <textarea
             id="daily-reflection"
             rows="4"
@@ -665,41 +480,289 @@ function App() {
             placeholder="A thought, a moment, a tiny thing… anything is okay."
           />
 
-          {todayCheckin && <p className="vc-soft">Today's check-in is saved. You can update it whenever you need.</p>}
+          {todayCheckin && (
+            <p className="vc-soft">
+              Today's check-in is saved. You can update it whenever you need.
+            </p>
+          )}
 
-          <button className="vc-primary" type="button" onClick={saveCheckin} disabled={busy}>
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveCheckin}
+            disabled={busy}
+          >
             {busy ? "Saving…" : "Save my check-in"}
           </button>
         </section>
 
         <section className="vc-feature-grid">
-          <button className="vc-card vc-feature" type="button" onClick={() => setPage("breathe")}>
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("breathe")}
+          >
             <span className="vc-feature-icon">🌬️</span>
-            <h3>Focus &amp; Breathe</h3>
-            <p className="vc-muted">A small breathing break, just for you.</p>
+            <h3>Focus & Breathe</h3>
+            <p className="vc-muted">
+              A small breathing break, just for you.
+            </p>
           </button>
-          <button className="vc-card vc-feature" type="button" onClick={() => setPage("buddy")}>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("buddy")}
+          >
             <BlackDog small />
             <h3>Talk it out</h3>
-            <p className="vc-muted">Chat with your little black-dog companion.</p>
+            <p className="vc-muted">
+              Chat with your little black-dog companion.
+            </p>
           </button>
-          <button className="vc-card vc-feature" type="button" onClick={() => setPage("journal")}>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("journal")}
+          >
             <span className="vc-feature-icon">📔</span>
             <h3>Your journal</h3>
-            <p className="vc-muted">Leave today's thoughts on a page.</p>
+            <p className="vc-muted">
+              Leave today's thoughts on a page.
+            </p>
           </button>
-          <button className="vc-card vc-feature" type="button" onClick={() => setPage("support")}>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("support")}
+          >
             <span className="vc-feature-icon">🫶</span>
             <h3>Your support</h3>
-            <p className="vc-muted">Your contacts and helpful helplines.</p>
-          </button>
-          <button className="vc-card vc-feature" type="button" onClick={() => setPage("sounds")}>
-            <span className="vc-feature-icon">🎧</span>
-            <h3>Soothing Sounds</h3>
-            <p className="vc-muted">Rain, waves, and little sounds for a softer moment.</p>
+            <p className="vc-muted">
+              Your contacts and helpful helplines.
+            </p>
           </button>
         </section>
       </>
+    );
+  }
+
+  // NEW: Colour-coded monthly Mood Calendar.
+  function renderMoodCalendar() {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const selectedCheckin = allCheckins.find(
+      (entry) => entry.date === selectedCalendarDate
+    );
+
+    const selectedJournalEntries = journalEntries.filter(
+      (entry) => entry.date === selectedCalendarDate
+    );
+
+    function changeMonth(offset) {
+      setCalendarMonth(
+        (current) =>
+          new Date(
+            current.getFullYear(),
+            current.getMonth() + offset,
+            1
+          )
+      );
+    }
+
+    function getMoodColor(moodName) {
+      return MOODS.find((mood) => mood.name === moodName)?.color || "";
+    }
+
+    return (
+      <section className="vc-card vc-mood-calendar">
+        <p className="vc-eyebrow">YOUR EMOTIONAL JOURNEY</p>
+        <h2>My Mood Calendar ✦</h2>
+        <p className="vc-muted">
+          Every little cube tells a story. Look back at your days with
+          kindness.
+        </p>
+
+        <div className="vc-calendar-month">
+          <button
+            type="button"
+            className="vc-quiet"
+            aria-label="Previous month"
+            onClick={() => changeMonth(-1)}
+          >
+            ‹
+          </button>
+
+          <h3>
+            {calendarMonth.toLocaleDateString("en-IN", {
+              month: "long",
+              year: "numeric",
+            })}
+          </h3>
+
+          <button
+            type="button"
+            className="vc-quiet"
+            aria-label="Next month"
+            onClick={() => changeMonth(1)}
+          >
+            ›
+          </button>
+        </div>
+
+        <div className="vc-mood-calendar-grid">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+            (day) => (
+              <div className="vc-calendar-weekday" key={day}>
+                {day}
+              </div>
+            )
+          )}
+
+          {Array.from({ length: firstDay }, (_, index) => (
+            <div
+              className="vc-calendar-empty"
+              key={`empty-${index}`}
+            />
+          ))}
+
+          {Array.from({ length: daysInMonth }, (_, index) => {
+            const day = index + 1;
+
+            const date = [
+              year,
+              String(month + 1).padStart(2, "0"),
+              String(day).padStart(2, "0"),
+            ].join("-");
+
+            const checkin = allCheckins.find(
+              (entry) => entry.date === date
+            );
+
+            const mood = MOODS.find(
+              (item) => item.name === checkin?.mood
+            );
+
+            const isSelected = selectedCalendarDate === date;
+            const isToday = todayKey() === date;
+
+            return (
+              <button
+                type="button"
+                key={date}
+                className={[
+                  "vc-calendar-cube",
+                  isSelected ? "selected" : "",
+                  isToday ? "today" : "",
+                  mood ? "has-mood" : "no-mood",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                style={{
+                  "--cube-mood-color": mood?.color || "#29233F",
+                }}
+                onClick={() => setSelectedCalendarDate(date)}
+                aria-label={`${date}${
+                  checkin
+                    ? `, mood: ${checkin.mood}`
+                    : ", no mood recorded"
+                }`}
+                title={
+                  checkin
+                    ? `${checkin.mood} — ${date}`
+                    : date
+                }
+              >
+                <span className="vc-calendar-cube-day">{day}</span>
+                <span className="vc-calendar-cube-symbol">
+                  {mood?.emoji || "·"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="vc-calendar-legend">
+          {MOODS.map((mood) => (
+            <div
+              className="vc-calendar-legend-item"
+              key={mood.name}
+            >
+              <span
+                className="vc-calendar-legend-swatch"
+                style={{ backgroundColor: mood.color }}
+              />
+              <span>
+                {mood.emoji} {mood.name}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="vc-calendar-detail">
+          <p className="vc-eyebrow">A MOMENT FROM YOUR JOURNEY</p>
+
+          <h3>
+            {new Date(
+              `${selectedCalendarDate}T12:00:00`
+            ).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </h3>
+
+          {selectedCheckin ? (
+            <>
+              <p
+                className="vc-calendar-detail-mood"
+                style={{
+                  color: getMoodColor(selectedCheckin.mood),
+                }}
+              >
+                {MOODS.find(
+                  (mood) => mood.name === selectedCheckin.mood
+                )?.emoji}{" "}
+                {selectedCheckin.mood}
+              </p>
+
+              <p className="vc-muted">
+                {selectedCheckin.reflection ||
+                  "You checked in, and that matters."}
+              </p>
+            </>
+          ) : (
+            <p className="vc-muted">
+              No mood check-in saved for this date. That's okay — every
+              day doesn't need to be recorded.
+            </p>
+          )}
+
+          {selectedJournalEntries.length > 0 && (
+            <div className="vc-calendar-journal">
+              <h4>Journal entries 📔</h4>
+
+              {selectedJournalEntries.map((entry) => (
+                <article key={entry.id}>
+                  <p className="vc-calendar-detail-mood">
+                    {MOODS.find(
+                      (mood) => mood.name === entry.mood
+                    )?.emoji || "🌙"}{" "}
+                    {entry.mood}
+                  </p>
+                  <p>{entry.text}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     );
   }
 
@@ -708,18 +771,56 @@ function App() {
       <section className="vc-card vc-breathing">
         <p className="vc-eyebrow">SLOW DOWN A LITTLE</p>
         <h2>Let's breathe together</h2>
-        <p className="vc-muted">Follow the circle at a comfortable pace. If focusing on your breath feels uncomfortable, stop and simply notice the room around you.</p>
-        <div className={`vc-breath-circle ${breathing ? "is-breathing" : ""}`} aria-live="polite">
-          <div className="vc-breath-inner"><span>✦</span><p>{breathPhase}</p></div>
+        <p className="vc-muted">
+          Follow the circle at a comfortable pace. If focusing on your breath
+          feels uncomfortable, stop and simply notice the room around you.
+        </p>
+
+        <div
+          className={`vc-breath-circle ${breathing ? "is-breathing" : ""}`}
+          aria-live="polite"
+        >
+          <div className="vc-breath-inner">
+            <span>✦</span>
+            <p>{breathPhase}</p>
+          </div>
         </div>
-        <p className="vc-soft">{breathing ? `Breathing cycle ${breathCount}` : "Try a gentle inhale, then a slower exhale."}</p>
+
+        <p className="vc-soft">
+          {breathing
+            ? `Breathing cycle ${breathCount}`
+            : "Try a gentle inhale, then a slower exhale."}
+        </p>
+
         <div className="vc-actions">
           {!breathing ? (
-            <button className="vc-primary" type="button" onClick={() => { setBreathCount(0); setBreathing(true); }}>Begin breathing</button>
+            <button
+              className="vc-primary"
+              type="button"
+              onClick={() => {
+                setBreathCount(0);
+                setBreathing(true);
+              }}
+            >
+              Begin breathing
+            </button>
           ) : (
-            <button className="vc-quiet" type="button" onClick={stopBreathing}>Finish for now</button>
+            <button
+              className="vc-quiet"
+              type="button"
+              onClick={stopBreathing}
+            >
+              Finish for now
+            </button>
           )}
-          <button className="vc-quiet" type="button" onClick={() => setPage("home")}>Back to home</button>
+
+          <button
+            className="vc-quiet"
+            type="button"
+            onClick={() => setPage("home")}
+          >
+            Back to home
+          </button>
         </div>
       </section>
     );
@@ -733,23 +834,48 @@ function App() {
           <div>
             <p className="vc-eyebrow">YOUR LITTLE COMPANION</p>
             <h2>Hey, I'm Buddy 🐾</h2>
-            <p className="vc-muted">No pressure. No perfect words required.</p>
+            <p className="vc-muted">
+              No pressure. No perfect words required.
+            </p>
           </div>
         </div>
+
         <div className="vc-chat-messages" aria-live="polite">
           {chatMessages.map((message, index) => (
-            <div key={`${index}-${message.role}`} className={`vc-chat-bubble ${message.role === "user" ? "vc-chat-user" : "vc-chat-buddy"}`}>
+            <div
+              key={`${index}-${message.role}`}
+              className={`vc-chat-bubble ${
+                message.role === "user"
+                  ? "vc-chat-user"
+                  : "vc-chat-buddy"
+              }`}
+            >
               {message.role !== "user" && <span>🐾 </span>}
               {message.content}
             </div>
           ))}
+
           {busy && <p className="vc-soft">Buddy is thinking… 🐾</p>}
         </div>
+
         <form className="vc-chat-form" onSubmit={sendChatMessage}>
-          <input aria-label="Your message" value={chatInput} onChange={(event) => setChatInput(event.target.value)} placeholder="Tell Buddy what's on your mind…" maxLength={2000} />
-          <button className="vc-primary" type="submit" disabled={busy}>Send</button>
+          <input
+            aria-label="Your message"
+            value={chatInput}
+            onChange={(event) => setChatInput(event.target.value)}
+            placeholder="Tell Buddy what's on your mind…"
+            maxLength={2000}
+          />
+
+          <button className="vc-primary" type="submit" disabled={busy}>
+            Send
+          </button>
         </form>
-        <p className="vc-soft">Buddy is an AI companion, not a human or therapist. Avoid sharing passwords, addresses, or other sensitive personal details.</p>
+
+        <p className="vc-soft">
+          Buddy is an AI companion, not a human or therapist. Avoid sharing
+          passwords, addresses, or other sensitive personal details.
+        </p>
       </section>
     );
   }
@@ -760,57 +886,138 @@ function App() {
         <section className="vc-card">
           <p className="vc-eyebrow">YOUR LITTLE CORNER</p>
           <h2>Dear diary… 🌙</h2>
-          <p className="vc-muted">This page is yours. Write a few lines, or a lot. You don't have to make sense of everything right now.</p>
+          <p className="vc-muted">
+            This page is yours. Write a few lines, or a lot. You don't have
+            to make sense of everything right now.
+          </p>
+
           <label htmlFor="journal-mood">Today's vibe</label>
+
           <div className="vc-moods">
             {MOODS.map((mood) => (
-              <button key={mood.name} type="button" className={`vc-mood-option ${journalMood === mood.name ? "selected" : ""}`} onClick={() => setJournalMood(mood.name)} style={{ "--mood-color": mood.color }}>
-                <span>{mood.emoji}</span>{mood.name}
+              <button
+                key={mood.name}
+                type="button"
+                className={`vc-mood-option ${
+                  journalMood === mood.name ? "selected" : ""
+                }`}
+                onClick={() => setJournalMood(mood.name)}
+                style={{ "--mood-color": mood.color }}
+              >
+                <span>{mood.emoji}</span>
+                {mood.name}
               </button>
             ))}
           </div>
-          <label htmlFor="journal-entry">What would you like to remember?</label>
-          <textarea id="journal-entry" rows="6" value={journalText} onChange={(event) => setJournalText(event.target.value)} placeholder="A little win, a hard moment, a random thought…" />
-          <button className="vc-primary" type="button" onClick={saveJournal} disabled={busy}>{busy ? "Saving…" : "Save today's page"}</button>
+
+          <label htmlFor="journal-entry">
+            What would you like to remember?
+          </label>
+
+          <textarea
+            id="journal-entry"
+            rows="6"
+            value={journalText}
+            onChange={(event) => setJournalText(event.target.value)}
+            placeholder="A little win, a hard moment, a random thought…"
+          />
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveJournal}
+            disabled={busy}
+          >
+            {busy ? "Saving…" : "Save today's page"}
+          </button>
         </section>
 
         <section className="vc-card vc-calendar-card">
           <p className="vc-eyebrow">YOUR MOOD CALENDAR</p>
           <h2>Look back gently</h2>
+
           <label htmlFor="journal-date">Choose a date</label>
-          <input id="journal-date" type="date" value={calendarDate} onChange={(event) => setCalendarDate(event.target.value)} />
+
+          <input
+            id="journal-date"
+            type="date"
+            value={calendarDate}
+            onChange={(event) => setCalendarDate(event.target.value)}
+          />
+
           <div className="vc-calendar-dots">
             {monthEntries.map((entry) => {
-              const mood = MOODS.find((item) => item.name === entry.mood);
+              const mood = MOODS.find(
+                (item) => item.name === entry.mood
+              );
+
               return (
-                <button key={entry.id} type="button" className={`vc-calendar-day ${entry.date === calendarDate ? "selected" : ""}`} onClick={() => setCalendarDate(entry.date)} title={`${entry.date}: ${entry.mood || "Journal entry"}`}>
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={`vc-calendar-day ${
+                    entry.date === calendarDate ? "selected" : ""
+                  }`}
+                  onClick={() => setCalendarDate(entry.date)}
+                  title={`${entry.date}: ${entry.mood || "Journal entry"}`}
+                >
                   <span>{Number(entry.date.slice(-2))}</span>
-                  <span className="vc-calendar-dot" style={{ background: mood?.color || "#bda7ff" }} />
+                  <span
+                    className="vc-calendar-dot"
+                    style={{
+                      background: mood?.color || "#bda7ff",
+                    }}
+                  />
                 </button>
               );
             })}
           </div>
+
           <h3>Pages from {calendarDate}</h3>
+
           {entriesForSelectedDate.length === 0 ? (
-            <p className="vc-muted">No journal page for this date yet. That's okay; every day doesn't need to be documented.</p>
-          ) : entriesForSelectedDate.map((entry) => (
-            <article className="vc-entry" key={entry.id}>
-              <p className="vc-entry-mood">{MOODS.find((item) => item.name === entry.mood)?.emoji || "🌙"} {entry.mood}</p>
-              <p>{entry.text}</p>
-            </article>
-          ))}
+            <p className="vc-muted">
+              No journal page for this date yet. That's okay; every day
+              doesn't need to be documented.
+            </p>
+          ) : (
+            entriesForSelectedDate.map((entry) => (
+              <article className="vc-entry" key={entry.id}>
+                <p className="vc-entry-mood">
+                  {MOODS.find((item) => item.name === entry.mood)?.emoji ||
+                    "🌙"}{" "}
+                  {entry.mood}
+                </p>
+                <p>{entry.text}</p>
+              </article>
+            ))
+          )}
         </section>
 
         <section className="vc-card">
           <h3>Recent pages</h3>
+
           {journalEntries.length === 0 ? (
-            <p className="vc-muted">Your journal will grow one small page at a time.</p>
-          ) : journalEntries.slice(0, 5).map((entry) => (
-            <button className="vc-entry vc-entry-button" key={entry.id} type="button" onClick={() => setCalendarDate(entry.date || todayKey())}>
-              <strong>{entry.date} · {entry.mood || "A little reflection"}</strong>
-              <p>{entry.text}</p>
-            </button>
-          ))}
+            <p className="vc-muted">
+              Your journal will grow one small page at a time.
+            </p>
+          ) : (
+            journalEntries.slice(0, 5).map((entry) => (
+              <button
+                className="vc-entry vc-entry-button"
+                key={entry.id}
+                type="button"
+                onClick={() =>
+                  setCalendarDate(entry.date || todayKey())
+                }
+              >
+                <strong>
+                  {entry.date} · {entry.mood || "A little reflection"}
+                </strong>
+                <p>{entry.text}</p>
+              </button>
+            ))
+          )}
         </section>
       </>
     );
@@ -822,15 +1029,44 @@ function App() {
         <section className="vc-card">
           <p className="vc-eyebrow">PEOPLE IN YOUR CORNER</p>
           <h2>Your trusted contacts 🫶</h2>
-          <p className="vc-muted">Add people you feel safe reaching out to. VibeCheck does not automatically call them or send alerts.</p>
+          <p className="vc-muted">
+            Add people you feel safe reaching out to. VibeCheck does not
+            automatically call them or send alerts.
+          </p>
+
           <label htmlFor="contact-name">Contact name</label>
-          <input id="contact-name" value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Someone you trust" />
+
+          <input
+            id="contact-name"
+            value={contactName}
+            onChange={(event) => setContactName(event.target.value)}
+            placeholder="Someone you trust"
+          />
+
           <label htmlFor="contact-phone">Phone number</label>
-          <input id="contact-phone" type="tel" value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="Include country code if needed" />
-          <button className="vc-primary" type="button" onClick={saveContact} disabled={busy}>Save contact</button>
+
+          <input
+            id="contact-phone"
+            type="tel"
+            value={contactPhone}
+            onChange={(event) => setContactPhone(event.target.value)}
+            placeholder="Include country code if needed"
+          />
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveContact}
+            disabled={busy}
+          >
+            Save contact
+          </button>
+
           {contacts.map((contact) => (
             <div className="vc-entry" key={contact.id}>
-              <strong>{contact.name}</strong><p>{contact.phone}</p><a href={`tel:${contact.phone}`}>Call this contact</a>
+              <strong>{contact.name}</strong>
+              <p>{contact.phone}</p>
+              <a href={`tel:${contact.phone}`}>Call this contact</a>
             </div>
           ))}
         </section>
@@ -838,98 +1074,36 @@ function App() {
         <section className="vc-card">
           <p className="vc-eyebrow">SUPPORT WHEN YOU NEED IT</p>
           <h2>You're not alone.</h2>
-          <p className="vc-muted">If you need support, consider reaching out to someone you trust or a qualified professional.</p>
+          <p className="vc-muted">
+            If you need support, consider reaching out to someone you trust
+            or a qualified professional.
+          </p>
+
           {HELPLINES.map((line) => (
             <article className="vc-entry" key={line.number}>
-              <h3>{line.name}</h3><p>{line.detail}</p><a href={`tel:${line.number}`}>Call {line.number}</a>
+              <h3>{line.name}</h3>
+              <p>{line.detail}</p>
+              <a href={`tel:${line.number}`}>Call {line.number}</a>
             </article>
           ))}
-          <p className="vc-soft">If you or someone else is in immediate danger in India, call 112. For mental health support, Tele-MANAS is available at 14416.</p>
+
+          <p className="vc-soft">
+            If you or someone else is in immediate danger in India, call
+            112. For mental health support, Tele-MANAS is available at
+            14416.
+          </p>
         </section>
       </>
-    );
-  }
-
-  function renderSoothingSounds() {
-    const selectedSound = activeSound === "custom" && customSound
-      ? customSound
-      : SOOTHING_SOUNDS.find((sound) => sound.id === activeSound) || SOOTHING_SOUNDS[0];
-
-    return (
-      <section className="vc-card vc-sounds-page">
-        <p className="vc-eyebrow">YOUR LITTLE SOUND SANCTUARY</p>
-        <h2>A softer moment 🎧</h2>
-        <p className="vc-muted">Choose a sound, get comfortable, and give yourself a few quiet minutes. There's nothing you need to achieve here.</p>
-
-        <div className="vc-sounds-grid">
-          {SOOTHING_SOUNDS.map((sound) => (
-            <button key={sound.id} type="button" className={`vc-sound-card ${activeSound === sound.id ? "selected" : ""}`} onClick={() => selectSound(sound.id)}>
-              <span className="vc-sound-emoji">{sound.emoji}</span>
-              <strong>{sound.name}</strong>
-              <span className="vc-sound-description">{sound.description}</span>
-            </button>
-          ))}
-          {customSound && (
-            <button type="button" className={`vc-sound-card ${activeSound === "custom" ? "selected" : ""}`} onClick={() => selectSound("custom")}>
-              <span className="vc-sound-emoji">🎵</span>
-              <strong>{customSound.name}</strong>
-              <span className="vc-sound-description">Your uploaded sound</span>
-            </button>
-          )}
-        </div>
-
-        <div className="vc-sound-player">
-          <div className="vc-sound-player-heading">
-            <span className="vc-sound-emoji">{selectedSound.emoji}</span>
-            <div>
-              <p className="vc-eyebrow">NOW SELECTED</p>
-              <h3>{selectedSound.name}</h3>
-              <p className="vc-muted">{selectedSound.description}</p>
-            </div>
-          </div>
-
-          {activeSound === "custom" && customSound && (
-            <audio
-              ref={uploadAudioRef}
-              src={customSound.src}
-              loop
-              preload="metadata"
-              onPlay={() => { setSoundPlaying(true); setSoundError(""); }}
-              onPause={() => setSoundPlaying(false)}
-              onError={() => { setSoundPlaying(false); setSoundError("This file format could not be played. Try an MP3 or WAV file."); }}
-            />
-          )}
-
-          <div className="vc-actions">
-            <button className="vc-primary" type="button" onClick={playSelectedSound}>{soundPlaying ? "Ⅱ Pause sound" : "▶ Play sound"}</button>
-            <button className="vc-quiet" type="button" onClick={stopSound}>Stop</button>
-          </div>
-
-          <label htmlFor="sound-volume">Volume: {Math.round(soundVolume * 100)}%</label>
-          <input id="sound-volume" className="vc-volume" type="range" min="0" max="1" step="0.05" value={soundVolume} onChange={(event) => setSoundVolume(Number(event.target.value))} />
-          <p className="vc-soft" aria-live="polite">{soundPlaying ? "Take your time. Pause whenever you like. ✨" : "Press play when you're ready."}</p>
-          {soundError && <p className="vc-sound-error" role="status">{soundError}</p>}
-        </div>
-
-        <div className="vc-sound-upload">
-          <h3>Bring your own sound 🎶</h3>
-          <p className="vc-muted">Choose an audio file from your device. It plays locally and isn't uploaded to your VibeCheck account.</p>
-          <label className="vc-upload-label" htmlFor="custom-sound">Choose an audio file</label>
-          <input id="custom-sound" type="file" accept="audio/*" onChange={handleSoundUpload} />
-          <p className="vc-soft">Your uploaded sound is available during this browser session. If you refresh, select it again.</p>
-        </div>
-
-        <div className="vc-actions">
-          <button className="vc-quiet" type="button" onClick={() => { stopSound(); setPage("home"); }}>Back to home</button>
-        </div>
-      </section>
     );
   }
 
   if (authLoading) {
     return (
       <main className="vc-shell">
-        <section className="vc-card"><BlackDog /><h2>Finding your little corner of the galaxy…</h2></section>
+        <section className="vc-card">
+          <BlackDog />
+          <h2>Finding your little corner of the galaxy…</h2>
+        </section>
       </main>
     );
   }
@@ -941,8 +1115,19 @@ function App() {
           <BlackDog />
           <p className="vc-eyebrow">WELCOME TO VIBECHECK</p>
           <h1>Your little galaxy is waiting ✨</h1>
-          <p className="vc-muted">Please sign in through your existing VibeCheck login page to continue. Your journal and contacts are available only after authentication.</p>
-          <button className="vc-primary" type="button" onClick={() => { window.location.href = "/"; }}>Go to login</button>
+          <p className="vc-muted">
+            Please sign in through your existing VibeCheck login page to
+            continue. Your journal and contacts are available only after
+            authentication.
+          </p>
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={() => (window.location.href = "/")}
+          >
+            Go to login
+          </button>
         </section>
       </main>
     );
@@ -950,11 +1135,11 @@ function App() {
 
   const pages = [
     { id: "home", label: "Home", emoji: "✦" },
+    { id: "calendar", label: "Mood Calendar", emoji: "🗓️" },
     { id: "breathe", label: "Focus & Breathe", emoji: "🌬️" },
     { id: "buddy", label: "Talk it out", emoji: "🐾" },
     { id: "journal", label: "Journal", emoji: "📔" },
     { id: "support", label: "Support", emoji: "🫶" },
-    { id: "sounds", label: "Soothing Sounds", emoji: "🎧" },
   ];
 
   return (
@@ -962,14 +1147,31 @@ function App() {
       <header className="vc-header">
         <div>
           <p className="vc-eyebrow">YOUR PERSONAL GALAXY</p>
-          <h1>Vibe<span>Check</span> ✦</h1>
-          <p className="vc-muted">A small pause. A little more room to breathe.</p>
+          <h1>
+            Vibe<span>Check</span> ✦
+          </h1>
+          <p className="vc-muted">
+            A small pause. A little more room to breathe.
+          </p>
         </div>
+
+        <button
+          className="vc-quiet"
+          type="button"
+          onClick={() => auth.signOut()}
+        >
+          Sign out
+        </button>
       </header>
 
       <nav className="vc-nav" aria-label="Main navigation">
         {pages.map((item) => (
-          <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => setPage(item.id)}>
+          <button
+            key={item.id}
+            type="button"
+            className={page === item.id ? "active" : ""}
+            onClick={() => setPage(item.id)}
+          >
             {item.emoji} {item.label}
           </button>
         ))}
@@ -978,84 +1180,26 @@ function App() {
       {notice && (
         <div className="vc-notice" role="status">
           <span>{notice}</span>
-          <button type="button" aria-label="Dismiss message" onClick={() => setNotice("")}>×</button>
-        </div>
-      )}
-
-      {/* Daily mood popup */}
-      {showMoodPopup && !showGroundingPopup && (
-        <div className="vc-popup-backdrop">
-          <section className="vc-popup vc-card" role="dialog" aria-modal="true" aria-labelledby="mood-popup-title">
-            <BlackDog />
-            <p className="vc-eyebrow">YOUR DAILY PAUSE ✦</p>
-            <h2 id="mood-popup-title">How are you feeling today?</h2>
-            <p className="vc-muted">Take a little pause. There are no right or wrong answers.</p>
-
-            <div className="vc-moods">
-              {MOODS.map((mood) => (
-                <button
-                  key={mood.name}
-                  type="button"
-                  className={`vc-mood-option ${selectedMood === mood.name ? "selected" : ""}`}
-                  style={{ "--mood-color": mood.color }}
-                  onClick={() => setSelectedMood(mood.name)}
-                >
-                  <span>{mood.emoji}</span>{mood.name}
-                </button>
-              ))}
-            </div>
-
-            <button className="vc-primary" type="button" disabled={!selectedMood} onClick={continueFromMood}>
-              Continue ✨
-            </button>
-            <p className="vc-soft">A small check-in, just for you.</p>
-          </section>
-        </div>
-      )}
-
-      {/* 5–4–3–2–1 grounding popup */}
-      {showGroundingPopup && (
-        <div className="vc-popup-backdrop">
-          <section className="vc-popup vc-card" role="dialog" aria-modal="true" aria-labelledby="grounding-title">
-            <p className="vc-eyebrow">LET'S FIND OUR WAY BACK 🌙</p>
-            <h2 id="grounding-title">The 5–4–3–2–1 grounding pause</h2>
-            <p className="vc-muted">Take this slowly. You can listen to each prompt or simply read it.</p>
-
-            {GROUNDING_STEPS.map((step, index) => (
-              <div
-                key={step.count}
-                className="vc-entry"
-                style={{
-                  opacity: groundingStep === index ? 1 : 0.55,
-                  border: groundingStep === index ? "1px solid #a994f5" : undefined,
-                }}
-              >
-                <strong>{step.count} — {step.title}</strong>
-                {groundingStep === index && <p>{step.prompt}</p>}
-              </div>
-            ))}
-
-            <div className="vc-actions">
-              <button className="vc-primary" type="button" onClick={advanceGrounding}>
-                {groundingStep < 4 ? "Next step →" : "Finish and continue ✨"}
-              </button>
-              <button className="vc-quiet" type="button" onClick={closeMoodPopup}>
-                Skip for now
-              </button>
-            </div>
-            <p className="vc-soft">Press Next step to hear the current prompt read aloud when your browser supports speech.</p>
-          </section>
+          <button
+            type="button"
+            aria-label="Dismiss message"
+            onClick={() => setNotice("")}
+          >
+            ×
+          </button>
         </div>
       )}
 
       {page === "home" && renderHome()}
+      {page === "calendar" && renderMoodCalendar()}
       {page === "breathe" && renderBreathing()}
       {page === "buddy" && renderChat()}
       {page === "journal" && renderJournal()}
       {page === "support" && renderSupport()}
-      {page === "sounds" && renderSoothingSounds()}
 
-      <footer className="vc-footer">Made with care, for the days that feel like a lot. ✦</footer>
+      <footer className="vc-footer">
+        Made with care, for the days that feel like a lot. ✦
+      </footer>
     </main>
   );
 }

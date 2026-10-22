@@ -1184,3 +1184,167 @@ body {
     max-height: 94vh;
   }
 }
+
+/* Mood Calendar — VibeCheck galaxy theme */
+
+.vc-calendar-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 18px;
+}
+
+.vc-calendar-month h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.vc-mood-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vc-calendar-weekday {
+  text-align: center;
+  color: #bcb3d5;
+  font-size: 0.75rem;
+  padding: 8px 0;
+}
+
+.vc-calendar-empty {
+  min-width: 0;
+}
+
+.vc-calendar-cube {
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  padding: 5px 2px;
+  border: 1px solid #39314f;
+  border-radius: 10px;
+  background: #201b35;
+  color: #eee9ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.vc-calendar-cube.has-mood {
+  background: var(--cube-mood-color);
+  color: #20182d;
+  border-color: transparent;
+  box-shadow: 0 3px 12px
+    color-mix(in srgb, var(--cube-mood-color) 28%, transparent);
+}
+
+.vc-calendar-cube:hover {
+  transform: translateY(-2px);
+}
+
+.vc-calendar-cube.selected {
+  outline: 2px solid #c6b5ff;
+  outline-offset: 2px;
+}
+
+.vc-calendar-cube.today {
+  border: 2px solid #bba8ff;
+}
+
+.vc-calendar-cube-day {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.vc-calendar-cube-symbol {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.vc-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.vc-calendar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e5def7;
+  font-size: 0.82rem;
+}
+
+.vc-calendar-legend-swatch {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+}
+
+.vc-calendar-detail {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid rgba(169, 148, 245, 0.2);
+  border-radius: 16px;
+  background: rgba(169, 148, 245, 0.055);
+  overflow-wrap: anywhere;
+}
+
+.vc-calendar-detail h3 {
+  margin-top: 6px;
+}
+
+.vc-calendar-detail-mood {
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.vc-calendar-journal {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(169, 148, 245, 0.2);
+}
+
+.vc-calendar-journal article {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(169, 148, 245, 0.12);
+}
+
+.vc-calendar-journal article:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 480px) {
+  .vc-mood-calendar-grid {
+    gap: 5px;
+  }
+
+  .vc-calendar-cube {
+    border-radius: 7px;
+    gap: 3px;
+    padding: 3px 1px;
+  }
+
+  .vc-calendar-cube-day {
+    font-size: 0.75rem;
+  }
+
+  .vc-calendar-cube-symbol {
+    font-size: 0.9rem;
+  }
+
+  .vc-calendar-legend {
+    gap: 10px;
+    padding: 12px;
+  }
+}
