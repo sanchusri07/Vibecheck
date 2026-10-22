@@ -954,6 +954,7 @@ function App() {
     { id: "buddy", label: "Talk it out", emoji: "🐾" },
     { id: "journal", label: "Journal", emoji: "📔" },
     { id: "support", label: "Support", emoji: "🫶" },
+    { id: "feelgood", label: "Feel Good", emoji: "💌" },
     { id: "sounds", label: "Soothing Sounds", emoji: "🎧" },
   ];
 
@@ -1051,6 +1052,7 @@ function App() {
       {page === "home" && renderHome()}
       {page === "breathe" && renderBreathing()}
       {page === "buddy" && renderChat()}
+      {page === "feelgood" && <FeelGood />}
       {page === "journal" && renderJournal()}
       {page === "support" && renderSupport()}
       {page === "sounds" && renderSoothingSounds()}
