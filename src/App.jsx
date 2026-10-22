@@ -1217,13 +1217,7 @@ function App() {
           </p>
         </div>
 
-        <button
-          className="vc-quiet"
-          type="button"
-          onClick={() => auth.signOut()}
-        >
-          Sign out
-        </button>
+        
       </header>
 
       <nav className="vc-nav" aria-label="Main navigation">
