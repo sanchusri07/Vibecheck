@@ -1,574 +1,809 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import {
+  addDoc,
   collection,
   doc,
-  getDoc,
   getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
+  orderBy,
   query,
-  where,
-  onSnapshot,
+  setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
-import QuietComfort from "./QuietComfort";
 import "./App.css";
 
-const EMOTIONS = [
+const MOODS = [
+  { name: "Happy", emoji: "☀️", color: "#E8C98A" },
+  { name: "Calm", emoji: "🌿", color: "#8FC9C0" },
+  { name: "Anxious", emoji: "☁️", color: "#B6A6E8" },
+  { name: "Sad", emoji: "🌧️", color: "#8FA8D4" },
+  { name: "Tired", emoji: "🌙", color: "#C2B5CF" },
+  { name: "Excited", emoji: "✨", color: "#E5A9C8" },
+];
+
+const todayKey = () => new Date().toLocaleDateString("en-CA");
+
+const HELPLINES = [
   {
-    name: "Happy",
-    emoji: "☀️",
-    question: "When do you feel happy?",
-    hint: "What moments make you smile or feel alive?",
+    name: "Tele-MANAS — India",
+    number: "14416",
+    detail: "Free mental health support, available 24/7.",
   },
   {
-    name: "Sad",
-    emoji: "🌧️",
-    question: "When do you feel sad?",
-    hint: "Are there moments, situations, or thoughts that bring sadness?",
-  },
-  {
-    name: "Anxious",
-    emoji: "🫧",
-    question: "When do you feel anxious?",
-    hint: "What tends to make you worried, nervous, or overwhelmed?",
-  },
-  {
-    name: "Calm",
-    emoji: "🌿",
-    question: "When do you feel calm?",
-    hint: "Where are you, or what are you doing, when you feel at peace?",
-  },
-  {
-    name: "Tired",
-    emoji: "🌙",
-    question: "When do you feel tired?",
-    hint: "When do you feel drained, mentally or physically?",
-  },
-  {
-    name: "Excited",
-    emoji: "✨",
-    question: "When do you feel excited?",
-    hint: "What makes you look forward to something?",
+    name: "Emergency services — India",
+    number: "112",
+    detail: "For immediate danger or an urgent emergency.",
   },
 ];
 
-const TIMES = [
-  "8:00 PM",
-  "8:30 PM",
-  "9:00 PM",
-  "9:30 PM",
-  "10:00 PM",
-  "10:30 PM",
-  "11:00 PM",
-];
-
-const COLOURS = [
-  "#bda7ff",
-  "#f6a8c8",
-  "#9adbc5",
-  "#f5cc83",
-  "#9ec8ff",
-];
-
-function makeBuddyCode(uid) {
-  return uid.slice(-8).toUpperCase();
+function BlackDog({ small = false }) {
+  return (
+    <div
+      className={`vc-dog ${small ? "vc-dog-small" : ""}`}
+      aria-label="Cute black dog companion"
+      role="img"
+    >
+      <span className="vc-dog-ear vc-dog-ear-left" />
+      <span className="vc-dog-ear vc-dog-ear-right" />
+      <span className="vc-dog-face">
+        <span className="vc-dog-eye vc-dog-eye-left" />
+        <span className="vc-dog-eye vc-dog-eye-right" />
+        <span className="vc-dog-muzzle">
+          <span className="vc-dog-nose" />
+          <span className="vc-dog-mouth" />
+        </span>
+        <span className="vc-dog-blush vc-dog-blush-left" />
+        <span className="vc-dog-blush vc-dog-blush-right" />
+      </span>
+    </div>
+  );
 }
 
-export default function App() {
+function App() {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
-
+  const [authLoading, setAuthLoading] = useState(true);
   const [page, setPage] = useState("home");
-  const [setupStep, setSetupStep] = useState(0);
-  const [emotionIndex, setEmotionIndex] = useState(0);
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const [answers, setAnswers] = useState({});
-  const [name, setName] = useState("");
-  const [colour, setColour] = useState("#bda7ff");
-  const [supportStyle, setSupportStyle] = useState(
-    "Gentle reassurance"
-  );
-  const [selfTalk, setSelfTalk] = useState("");
-  const [reflectionTime, setReflectionTime] = useState("9:00 PM");
-  const [reflectionEmail, setReflectionEmail] = useState(false);
+  const [selectedMood, setSelectedMood] = useState("");
+  const [checkinText, setCheckinText] = useState("");
+  const [todayCheckin, setTodayCheckin] = useState(null);
 
-  const [mood, setMood] = useState("");
   const [journalText, setJournalText] = useState("");
-  const [gratitude, setGratitude] = useState("");
-  const [journal, setJournal] = useState([]);
+  const [journalMood, setJournalMood] = useState("");
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [calendarDate, setCalendarDate] = useState(todayKey());
 
-  const [buddyCode, setBuddyCode] = useState("");
-  const [requests, setRequests] = useState([]);
-  const [sentRequests, setSentRequests] = useState([]);
-  const [connections, setConnections] = useState([]);
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contacts, setContacts] = useState([]);
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hey, friend 🐾 I'm your little black-dog companion. You don't need to explain everything perfectly. What's on your mind?",
+    },
+  ]);
 
-  // Load the signed-in user and their profile.
+  const [breathing, setBreathing] = useState(false);
+  const [breathPhase, setBreathPhase] = useState("Ready when you are");
+  const [breathCount, setBreathCount] = useState(0);
+
+  const uid = user?.uid;
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-
-      if (!currentUser) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const userRef = doc(db, "users", currentUser.uid);
-        const snapshot = await getDoc(userRef);
-
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-
-          setProfile(data);
-          setName(data.name || "");
-          setColour(data.colour || "#bda7ff");
-          setAnswers(data.emotionAnswers || {});
-          setJournal(data.journal || []);
-          setSupportStyle(
-            data.supportStyle || "Gentle reassurance"
-          );
-          setSelfTalk(data.selfTalk || "");
-          setReflectionTime(data.reflectionTime || "9:00 PM");
-
-          // Email reminders are off unless the user explicitly enabled them.
-          setReflectionEmail(data.reflectionEmail ?? false);
-
-          if (!data.onboardingCompleted) {
-            setPage("setup");
-          } else {
-            setPage("home");
-          }
-        } else {
-          const initialProfile = {
-            email: currentUser.email || "",
-            buddyCode: makeBuddyCode(currentUser.uid),
-            createdAt: serverTimestamp(),
-          };
-
-          await setDoc(userRef, initialProfile);
-
-          setProfile(initialProfile);
-          setPage("setup");
-        }
-      } catch (err) {
-        console.error("Loading VibeCheck profile failed:", err);
-        setError(
-          "Couldn't load your VibeCheck profile. Check your Firestore setup and rules."
-        );
-      } finally {
-        setLoading(false);
-      }
+      setAuthLoading(false);
     });
-
     return unsubscribe;
   }, []);
 
-  // Listen for buddy requests and connections.
   useEffect(() => {
-    if (!user) {
-      setRequests([]);
-      setSentRequests([]);
-      setConnections([]);
-      return;
+    if (!uid) return;
+
+    let active = true;
+
+    async function loadData() {
+      try {
+        const [checkinSnapshot, journalSnapshot, contactSnapshot] =
+          await Promise.all([
+            getDocs(collection(db, "users", uid, "checkins")),
+            getDocs(
+              query(
+                collection(db, "users", uid, "journals"),
+                orderBy("createdAt", "desc")
+              )
+            ),
+            getDocs(collection(db, "users", uid, "emergencyContacts")),
+          ]);
+
+        if (!active) return;
+
+        const checkins = checkinSnapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
+
+        setTodayCheckin(
+          checkins.find((item) => item.date === todayKey()) || null
+        );
+
+        setJournalEntries(
+          journalSnapshot.docs.map((item) => ({
+            id: item.id,
+            ...item.data(),
+          }))
+        );
+
+        setContacts(
+          contactSnapshot.docs.map((item) => ({
+            id: item.id,
+            ...item.data(),
+          }))
+        );
+      } catch (error) {
+        console.error("Could not load VibeCheck data:", error);
+        if (active) {
+          setNotice(
+            "We couldn't load some saved data. Please check your connection and Firestore rules."
+          );
+        }
+      }
     }
 
-    const unsubscribeRequests = onSnapshot(
-      query(
-        collection(db, "buddyRequests"),
-        where("toUid", "==", user.uid)
-      ),
-      (snapshot) => {
-        setRequests(
-          snapshot.docs.map((item) => ({
-            id: item.id,
-            ...item.data(),
-          }))
-        );
-      },
-      (err) => console.error("Buddy requests listener:", err)
-    );
-
-    const unsubscribeSent = onSnapshot(
-      query(
-        collection(db, "buddyRequests"),
-        where("fromUid", "==", user.uid)
-      ),
-      (snapshot) => {
-        setSentRequests(
-          snapshot.docs.map((item) => ({
-            id: item.id,
-            ...item.data(),
-          }))
-        );
-      },
-      (err) => console.error("Sent requests listener:", err)
-    );
-
-    const unsubscribeConnections = onSnapshot(
-      query(
-        collection(db, "buddyConnections"),
-        where("members", "array-contains", user.uid)
-      ),
-      (snapshot) => {
-        setConnections(
-          snapshot.docs.map((item) => ({
-            id: item.id,
-            ...item.data(),
-          }))
-        );
-      },
-      (err) => console.error("Connections listener:", err)
-    );
+    loadData();
 
     return () => {
-      unsubscribeRequests();
-      unsubscribeSent();
-      unsubscribeConnections();
+      active = false;
     };
-  }, [user]);
+  }, [uid]);
 
-  const currentEmotion = EMOTIONS[emotionIndex];
+  const entriesForSelectedDate = useMemo(
+    () => journalEntries.filter((entry) => entry.date === calendarDate),
+    [journalEntries, calendarDate]
+  );
 
-  // Save the initial setup.
-  async function saveSetup() {
-    if (!user) return;
-
-    setError("");
-    setMessage("");
-
-    try {
-      const consentAt = reflectionEmail
-        ? (
-            profile?.reflectionEmailConsentAt ||
-            (profile?.reflectionEmail !== true
-              ? serverTimestamp()
-              : null)
-          )
-        : null;
-
-      const updatedProfile = {
-        name: name.trim() || "Friend",
-        colour,
-        emotionAnswers: answers,
-        selfTalk,
-        supportStyle,
-        reflectionTime,
-        reflectionEmail,
-        reflectionEmailConsentAt: consentAt,
-        onboardingCompleted: true,
-        updatedAt: serverTimestamp(),
-      };
-
-      await setDoc(
-        doc(db, "users", user.uid),
-        updatedProfile,
-        { merge: true }
-      );
-
-      setProfile((previous) => ({
-        ...previous,
-        ...updatedProfile,
-      }));
-
-      setPage("home");
-      setMessage(
-        "Your space is ready. Take it one moment at a time 💜"
-      );
-    } catch (err) {
-      console.error("Saving setup failed:", err);
-      setError(
-        "Couldn't save your preferences. Check that Firestore is enabled and its rules are published."
-      );
-    }
-  }
-
-  function nextEmotion() {
-    if (emotionIndex < EMOTIONS.length - 1) {
-      setEmotionIndex((index) => index + 1);
-    } else {
-      setSetupStep(2);
-    }
-  }
-
-  // Save a mood check-in to the user's journal.
-  async function saveJournal() {
-    if (!user) return;
-
-    if (!mood && !journalText.trim() && !gratitude.trim()) {
-      setError(
-        "Choose a mood or write a little something before saving."
-      );
-      return;
-    }
-
-    const entry = {
-      id: `${Date.now()}`,
-      mood,
-      text: journalText.trim(),
-      gratitude: gratitude.trim(),
-      date: new Date().toISOString(),
-    };
-
-    try {
-      const updatedJournal = [entry, ...journal];
-
-      await setDoc(
-        doc(db, "users", user.uid),
-        { journal: updatedJournal },
-        { merge: true }
-      );
-
-      setJournal(updatedJournal);
-      setMood("");
-      setJournalText("");
-      setGratitude("");
-      setError("");
-      setMessage("Saved gently to your private journal 💜");
-      setPage("journal");
-    } catch (err) {
-      console.error("Saving journal failed:", err);
-      setError("Couldn't save your journal entry. Please try again.");
-    }
-  }
-
-  // Send a Vibe Buddy request.
-  async function sendBuddyRequest() {
-    if (!user) return;
-
-    setError("");
-    setMessage("");
-
-    const code = buddyCode.trim().toUpperCase();
-
-    if (!code) {
-      setError("Enter your friend's Vibe Buddy code.");
-      return;
-    }
-
-    if (code === profile?.buddyCode) {
-      setError("That's your own code. Ask a friend for theirs.");
-      return;
-    }
-
-    try {
-      const foundUsers = await getDocs(
-        query(
-          collection(db, "users"),
-          where("buddyCode", "==", code)
-        )
-      );
-
-      if (foundUsers.empty) {
-        setError("We couldn't find that code. Check it with your friend.");
-        return;
-      }
-
-      const friend = foundUsers.docs[0];
-
-      if (friend.id === user.uid) {
-        setError("That's your own code.");
-        return;
-      }
-
-      const existingConnections = await getDocs(
-        query(
-          collection(db, "buddyConnections"),
-          where("members", "array-contains", user.uid)
-        )
-      );
-
-      const alreadyConnected = existingConnections.docs.some(
-        (item) => (item.data().members || []).includes(friend.id)
-      );
-
-      if (alreadyConnected) {
-        setError("You're already connected with this buddy.");
-        return;
-      }
-
-      const existingRequests = await getDocs(
-        query(
-          collection(db, "buddyRequests"),
-          where("fromUid", "==", user.uid),
-          where("toUid", "==", friend.id),
-          where("status", "==", "pending")
-        )
-      );
-
-      if (!existingRequests.empty) {
-        setError("You've already sent a request to this person.");
-        return;
-      }
-
-      await addDoc(collection(db, "buddyRequests"), {
-        fromUid: user.uid,
-        fromName: profile?.name || name || "A VibeCheck user",
-        toUid: friend.id,
-        status: "pending",
-        createdAt: serverTimestamp(),
-      });
-
-      setMessage(
-        "Buddy request sent! They'll need to accept before you connect."
-      );
-      setBuddyCode("");
-    } catch (err) {
-      console.error("Sending buddy request failed:", err);
-      setError(
-        "Couldn't send the request. Check your Firestore rules and try again."
-      );
-    }
-  }
-
-  // Accept or decline a buddy request.
-  async function respondToRequest(request, accept) {
-    if (!user) return;
-
-    setError("");
-    setMessage("");
-
-    try {
-      await updateDoc(doc(db, "buddyRequests", request.id), {
-        status: accept ? "accepted" : "declined",
-        respondedAt: serverTimestamp(),
-      });
-
-      if (accept) {
-        const connectionId = [request.fromUid, user.uid]
-          .sort()
-          .join("_");
-
-        await setDoc(
-          doc(db, "buddyConnections", connectionId),
-          {
-            members: [request.fromUid, user.uid],
-            names: {
-              [request.fromUid]: request.fromName || "Buddy",
-              [user.uid]: profile?.name || name || "Friend",
-            },
-            moodSharing: false,
-            active: true,
-            createdAt: serverTimestamp(),
-          }
-        );
-      }
-
-      setMessage(
-        accept
-          ? "You're connected! Mood sharing stays off until you choose to enable it."
-          : "Request declined."
-      );
-    } catch (err) {
-      console.error("Responding to buddy request failed:", err);
-      setError("Couldn't update that request. Check your Firestore rules.");
-    }
-  }
-
-  // Toggle mood sharing for an existing connection.
-  async function toggleMoodSharing(connection) {
-    setError("");
-    setMessage("");
-
-    try {
-      await updateDoc(
-        doc(db, "buddyConnections", connection.id),
-        { moodSharing: !connection.moodSharing }
-      );
-
-      setMessage("Sharing preference updated.");
-    } catch (err) {
-      console.error("Updating mood sharing failed:", err);
-      setError("Couldn't update sharing. Check your Firestore rules.");
-    }
-  }
-
-  // Disconnect from a Vibe Buddy.
-  async function endConnection(connection) {
-    if (!user) return;
-
-    const confirmed = window.confirm(
-      "Disconnect from this Vibe Buddy?"
+  const monthEntries = useMemo(() => {
+    const prefix = calendarDate.slice(0, 7);
+    return journalEntries.filter((entry) =>
+      String(entry.date || "").startsWith(prefix)
     );
+  }, [journalEntries, calendarDate]);
 
-    if (!confirmed) return;
-
-    try {
-      await updateDoc(
-        doc(db, "buddyConnections", connection.id),
-        {
-          endedBy: user.uid,
-          active: false,
-        }
-      );
-
-      setMessage("Vibe Buddy connection ended.");
-    } catch (err) {
-      console.error("Ending buddy connection failed:", err);
-      setError("Couldn't end the connection. Check your Firestore rules.");
+  async function saveCheckin() {
+    if (!uid) return;
+    if (!selectedMood) {
+      setNotice("Choose the vibe that feels closest to how you feel today.");
+      return;
     }
-  }
+    if (!checkinText.trim()) {
+      setNotice("Add a few words about what's on your mind today.");
+      return;
+    }
 
-  // Save settings without changing the user's journal or buddy data.
-  async function saveSettings() {
-    if (!user) return;
+    setBusy(true);
+    setNotice("");
 
-    setError("");
-    setMessage("");
-
-    const consentAt = reflectionEmail
-      ? (
-          profile?.reflectionEmailConsentAt ||
-          (profile?.reflectionEmail !== true
-            ? serverTimestamp()
-            : null)
-        )
-      : null;
-
-    const updatedSettings = {
-      name: name.trim() || "Friend",
-      colour,
-      supportStyle,
-      reflectionTime,
-      reflectionEmail,
-      reflectionEmailConsentAt: consentAt,
+    const data = {
+      date: todayKey(),
+      mood: selectedMood,
+      reflection: checkinText.trim(),
       updatedAt: serverTimestamp(),
     };
 
     try {
-      await setDoc(
-        doc(db, "users", user.uid),
-        updatedSettings,
-        { merge: true }
-      );
-
-      setProfile((previous) => ({
-        ...previous,
-        ...updatedSettings,
-      }));
-
-      setMessage("Your preferences are saved.");
-    } catch (err) {
-      console.error("Saving settings failed:", err);
-      setError("Couldn't save your settings.");
+      await setDoc(doc(db, "users", uid, "checkins", todayKey()), data);
+      setTodayCheckin({ ...data });
+      setNotice("Your check-in is saved. Thank you for pausing for yourself ✨");
+    } catch (error) {
+      console.error(error);
+      setNotice("Your check-in couldn't be saved. Please try again.");
+    } finally {
+      setBusy(false);
     }
   }
-  if (loading) {
+
+  async function saveJournal() {
+    if (!uid) return;
+
+    if (!journalText.trim()) {
+      setNotice("Write a little something before saving your journal.");
+      return;
+    }
+
+    setBusy(true);
+    setNotice("");
+
+    try {
+      const data = {
+        date: todayKey(),
+        mood: journalMood || selectedMood || "Not specified",
+        text: journalText.trim(),
+        createdAt: serverTimestamp(),
+      };
+
+      const saved = await addDoc(
+        collection(db, "users", uid, "journals"),
+        data
+      );
+
+      setJournalEntries((previous) => [
+        {
+          ...data,
+          id: saved.id,
+          createdAt: new Date(),
+        },
+        ...previous,
+      ]);
+
+      setJournalText("");
+      setJournalMood("");
+      setCalendarDate(todayKey());
+      setNotice("Your little page has been saved 🌙");
+    } catch (error) {
+      console.error(error);
+      setNotice("The journal entry couldn't be saved. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveContact() {
+    if (!uid) return;
+
+    if (!contactName.trim() || !contactPhone.trim()) {
+      setNotice("Please add both a contact name and a phone number.");
+      return;
+    }
+
+    setBusy(true);
+    setNotice("");
+
+    try {
+      const data = {
+        name: contactName.trim(),
+        phone: contactPhone.trim(),
+        createdAt: serverTimestamp(),
+      };
+
+      const saved = await addDoc(
+        collection(db, "users", uid, "emergencyContacts"),
+        data
+      );
+
+      setContacts((previous) => [...previous, { ...data, id: saved.id }]);
+      setContactName("");
+      setContactPhone("");
+      setNotice("Your contact has been saved.");
+    } catch (error) {
+      console.error(error);
+      setNotice("Couldn't save the contact. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendChatMessage(event) {
+    event?.preventDefault();
+
+    const message = chatInput.trim();
+    if (!message || busy) return;
+
+    const updatedMessages = [
+      ...chatMessages,
+      { role: "user", content: message },
+    ];
+
+    setChatMessages(updatedMessages);
+    setChatInput("");
+    setBusy(true);
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: updatedMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "The chat service is unavailable.");
+      }
+
+      setChatMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            data.reply ||
+            "I'm here with you. Want to tell me a little more?",
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+      setChatMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            "Oh, my little paws got tangled connecting just now 🐾 Please try again in a moment. You can still take a slow breath while we reconnect.",
+        },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!breathing) return;
+
+    const phases = [
+      { label: "Breathe in gently…", duration: 4000, count: 1 },
+      { label: "Breathe out slowly…", duration: 6000, count: 0 },
+    ];
+
+    let phaseIndex = 0;
+    let timeout;
+
+    function nextPhase() {
+      const phase = phases[phaseIndex];
+      setBreathPhase(phase.label);
+      if (phase.count) setBreathCount((count) => count + 1);
+
+      timeout = setTimeout(() => {
+        phaseIndex = (phaseIndex + 1) % phases.length;
+        nextPhase();
+      }, phase.duration);
+    }
+
+    nextPhase();
+
+    return () => clearTimeout(timeout);
+  }, [breathing]);
+
+  function stopBreathing() {
+    setBreathing(false);
+    setBreathPhase("Ready when you are");
+  }
+
+  function renderHome() {
+    return (
+      <>
+        <section className="vc-card vc-welcome">
+          <div>
+            <p className="vc-eyebrow">A LITTLE SPACE FOR YOU</p>
+            <h2>Hey there, stargazer ✨</h2>
+            <p className="vc-muted">
+              You don't have to figure everything out today. Take five minutes
+              to check in, breathe, or simply be.
+            </p>
+          </div>
+          <BlackDog />
+        </section>
+
+        <section className="vc-card">
+          <p className="vc-eyebrow">YOUR DAILY PAUSE</p>
+          <h2>How are you feeling today?</h2>
+          <p className="vc-muted">
+            There are no right or wrong answers. Pick whatever feels closest.
+          </p>
+
+          <div className="vc-moods">
+            {MOODS.map((mood) => (
+              <button
+                key={mood.name}
+                type="button"
+                className={`vc-mood-option ${
+                  selectedMood === mood.name ? "selected" : ""
+                }`}
+                onClick={() => setSelectedMood(mood.name)}
+                style={{ "--mood-color": mood.color }}
+              >
+                <span>{mood.emoji}</span>
+                {mood.name}
+              </button>
+            ))}
+          </div>
+
+          <label htmlFor="daily-reflection">
+            What's making you feel this way today?
+          </label>
+          <textarea
+            id="daily-reflection"
+            rows="4"
+            value={checkinText}
+            onChange={(event) => setCheckinText(event.target.value)}
+            placeholder="A thought, a moment, a tiny thing… anything is okay."
+          />
+
+          {todayCheckin && (
+            <p className="vc-soft">
+              Today's check-in is saved. You can update it whenever you need.
+            </p>
+          )}
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveCheckin}
+            disabled={busy}
+          >
+            {busy ? "Saving…" : "Save my check-in"}
+          </button>
+        </section>
+
+        <section className="vc-feature-grid">
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("breathe")}
+          >
+            <span className="vc-feature-icon">🌬️</span>
+            <h3>Focus & Breathe</h3>
+            <p className="vc-muted">A small breathing break, just for you.</p>
+          </button>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("buddy")}
+          >
+            <BlackDog small />
+            <h3>Talk it out</h3>
+            <p className="vc-muted">Chat with your little black-dog companion.</p>
+          </button>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("journal")}
+          >
+            <span className="vc-feature-icon">📔</span>
+            <h3>Your journal</h3>
+            <p className="vc-muted">Leave today's thoughts on a page.</p>
+          </button>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("support")}
+          >
+            <span className="vc-feature-icon">🫶</span>
+            <h3>Your support</h3>
+            <p className="vc-muted">Your contacts and helpful helplines.</p>
+          </button>
+        </section>
+      </>
+    );
+  }
+
+  function renderBreathing() {
+    return (
+      <section className="vc-card vc-breathing">
+        <p className="vc-eyebrow">SLOW DOWN A LITTLE</p>
+        <h2>Let's breathe together</h2>
+        <p className="vc-muted">
+          Follow the circle at a comfortable pace. If focusing on your breath
+          feels uncomfortable, stop and simply notice the room around you.
+        </p>
+
+        <div
+          className={`vc-breath-circle ${breathing ? "is-breathing" : ""}`}
+          aria-live="polite"
+        >
+          <div className="vc-breath-inner">
+            <span>✦</span>
+            <p>{breathPhase}</p>
+          </div>
+        </div>
+
+        <p className="vc-soft">
+          {breathing
+            ? `Breathing cycle ${breathCount}`
+            : "Try a gentle inhale, then a slower exhale."}
+        </p>
+
+        <div className="vc-actions">
+          {!breathing ? (
+            <button
+              className="vc-primary"
+              type="button"
+              onClick={() => {
+                setBreathCount(0);
+                setBreathing(true);
+              }}
+            >
+              Begin breathing
+            </button>
+          ) : (
+            <button
+              className="vc-quiet"
+              type="button"
+              onClick={stopBreathing}
+            >
+              Finish for now
+            </button>
+          )}
+          <button
+            className="vc-quiet"
+            type="button"
+            onClick={() => setPage("home")}
+          >
+            Back to home
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  function renderChat() {
+    return (
+      <section className="vc-card vc-chat-card">
+        <div className="vc-chat-heading">
+          <BlackDog />
+          <div>
+            <p className="vc-eyebrow">YOUR LITTLE COMPANION</p>
+            <h2>Hey, I'm Buddy 🐾</h2>
+            <p className="vc-muted">
+              No pressure. No perfect words required.
+            </p>
+          </div>
+        </div>
+
+        <div className="vc-chat-messages" aria-live="polite">
+          {chatMessages.map((message, index) => (
+            <div
+              key={`${index}-${message.role}`}
+              className={`vc-chat-bubble ${
+                message.role === "user" ? "vc-chat-user" : "vc-chat-buddy"
+              }`}
+            >
+              {message.role !== "user" && <span>🐾 </span>}
+              {message.content}
+            </div>
+          ))}
+          {busy && <p className="vc-soft">Buddy is thinking… 🐾</p>}
+        </div>
+
+        <form className="vc-chat-form" onSubmit={sendChatMessage}>
+          <input
+            aria-label="Your message"
+            value={chatInput}
+            onChange={(event) => setChatInput(event.target.value)}
+            placeholder="Tell Buddy what's on your mind…"
+            maxLength={2000}
+          />
+          <button className="vc-primary" type="submit" disabled={busy}>
+            Send
+          </button>
+        </form>
+
+        <p className="vc-soft">
+          Buddy is an AI companion, not a human or therapist. Avoid sharing
+          passwords, addresses, or other sensitive personal details.
+        </p>
+      </section>
+    );
+  }
+
+  function renderJournal() {
+    return (
+      <>
+        <section className="vc-card">
+          <p className="vc-eyebrow">YOUR LITTLE CORNER</p>
+          <h2>Dear diary… 🌙</h2>
+          <p className="vc-muted">
+            This page is yours. Write a few lines, or a lot. You don't have to
+            make sense of everything right now.
+          </p>
+
+          <label htmlFor="journal-mood">Today's vibe</label>
+          <div className="vc-moods">
+            {MOODS.map((mood) => (
+              <button
+                key={mood.name}
+                type="button"
+                className={`vc-mood-option ${
+                  journalMood === mood.name ? "selected" : ""
+                }`}
+                onClick={() => setJournalMood(mood.name)}
+                style={{ "--mood-color": mood.color }}
+              >
+                <span>{mood.emoji}</span>
+                {mood.name}
+              </button>
+            ))}
+          </div>
+
+          <label htmlFor="journal-entry">What would you like to remember?</label>
+          <textarea
+            id="journal-entry"
+            rows="6"
+            value={journalText}
+            onChange={(event) => setJournalText(event.target.value)}
+            placeholder="A little win, a hard moment, a random thought…"
+          />
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveJournal}
+            disabled={busy}
+          >
+            {busy ? "Saving…" : "Save today's page"}
+          </button>
+        </section>
+
+        <section className="vc-card vc-calendar-card">
+          <p className="vc-eyebrow">YOUR MOOD CALENDAR</p>
+          <h2>Look back gently</h2>
+          <label htmlFor="journal-date">Choose a date</label>
+          <input
+            id="journal-date"
+            type="date"
+            value={calendarDate}
+            onChange={(event) => setCalendarDate(event.target.value)}
+          />
+
+          <div className="vc-calendar-dots">
+            {monthEntries.map((entry) => {
+              const mood = MOODS.find((item) => item.name === entry.mood);
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={`vc-calendar-day ${
+                    entry.date === calendarDate ? "selected" : ""
+                  }`}
+                  onClick={() => setCalendarDate(entry.date)}
+                  title={`${entry.date}: ${entry.mood || "Journal entry"}`}
+                >
+                  <span>{Number(entry.date.slice(-2))}</span>
+                  <span
+                    className="vc-calendar-dot"
+                    style={{ background: mood?.color || "#bda7ff" }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          <h3>Pages from {calendarDate}</h3>
+
+          {entriesForSelectedDate.length === 0 ? (
+            <p className="vc-muted">
+              No journal page for this date yet. That's okay; every day doesn't
+              need to be documented.
+            </p>
+          ) : (
+            entriesForSelectedDate.map((entry) => (
+              <article className="vc-entry" key={entry.id}>
+                <p className="vc-entry-mood">
+                  {MOODS.find((item) => item.name === entry.mood)?.emoji || "🌙"}{" "}
+                  {entry.mood}
+                </p>
+                <p>{entry.text}</p>
+              </article>
+            ))
+          )}
+        </section>
+
+        <section className="vc-card">
+          <h3>Recent pages</h3>
+          {journalEntries.length === 0 ? (
+            <p className="vc-muted">
+              Your journal will grow one small page at a time.
+            </p>
+          ) : (
+            journalEntries.slice(0, 5).map((entry) => (
+              <button
+                className="vc-entry vc-entry-button"
+                key={entry.id}
+                type="button"
+                onClick={() => setCalendarDate(entry.date || todayKey())}
+              >
+                <strong>
+                  {entry.date} · {entry.mood || "A little reflection"}
+                </strong>
+                <p>{entry.text}</p>
+              </button>
+            ))
+          )}
+        </section>
+      </>
+    );
+  }
+
+  function renderSupport() {
+    return (
+      <>
+        <section className="vc-card">
+          <p className="vc-eyebrow">PEOPLE IN YOUR CORNER</p>
+          <h2>Your trusted contacts 🫶</h2>
+          <p className="vc-muted">
+            Add people you feel safe reaching out to. VibeCheck does not
+            automatically call them or send alerts.
+          </p>
+
+          <label htmlFor="contact-name">Contact name</label>
+          <input
+            id="contact-name"
+            value={contactName}
+            onChange={(event) => setContactName(event.target.value)}
+            placeholder="Someone you trust"
+          />
+
+          <label htmlFor="contact-phone">Phone number</label>
+          <input
+            id="contact-phone"
+            type="tel"
+            value={contactPhone}
+            onChange={(event) => setContactPhone(event.target.value)}
+            placeholder="Include country code if needed"
+          />
+
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={saveContact}
+            disabled={busy}
+          >
+            Save contact
+          </button>
+
+          {contacts.map((contact) => (
+            <div className="vc-entry" key={contact.id}>
+              <strong>{contact.name}</strong>
+              <p>{contact.phone}</p>
+              <a href={`tel:${contact.phone}`}>Call this contact</a>
+            </div>
+          ))}
+        </section>
+
+        <section className="vc-card">
+          <p className="vc-eyebrow">SUPPORT WHEN YOU NEED IT</p>
+          <h2>You're not alone.</h2>
+          <p className="vc-muted">
+            If you need support, consider reaching out to someone you trust or
+            a qualified professional.
+          </p>
+
+          {HELPLINES.map((line) => (
+            <article className="vc-entry" key={line.number}>
+              <h3>{line.name}</h3>
+              <p>{line.detail}</p>
+              <a href={`tel:${line.number}`}>Call {line.number}</a>
+            </article>
+          ))}
+
+          <p className="vc-soft">
+            If you or someone else is in immediate danger in India, call 112.
+            For mental health support, Tele-MANAS is available at 14416.
+          </p>
+        </section>
+      </>
+    );
+  }
+
+  if (authLoading) {
     return (
       <main className="vc-shell">
-        <div className="vc-card">
-          <p>Opening your safe space… 💜</p>
-        </div>
+        <section className="vc-card">
+          <BlackDog />
+          <h2>Finding your little corner of the galaxy…</h2>
+        </section>
       </main>
     );
   }
@@ -576,629 +811,92 @@ export default function App() {
   if (!user) {
     return (
       <main className="vc-shell">
-        <div className="vc-card">
-          <h1>Welcome to VibeCheck 💜</h1>
-          <p>
-            Please sign in through your existing login screen to continue.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  // Onboarding screens.
-  if (page === "setup") {
-    return (
-      <main className="vc-shell">
         <section className="vc-card vc-setup">
-          <p className="vc-eyebrow">
-            YOUR SPACE ·{" "}
-            {setupStep === 1
-              ? `EMOTION ${emotionIndex + 1} OF ${EMOTIONS.length}`
-              : `STEP ${setupStep + 1} OF 3`}
+          <BlackDog />
+          <p className="vc-eyebrow">WELCOME TO VIBECHECK</p>
+          <h1>Your little galaxy is waiting ✨</h1>
+          <p className="vc-muted">
+            Please sign in through your existing VibeCheck login page to
+            continue. Your journal and contacts are available only after
+            authentication.
           </p>
-
-          {setupStep === 0 && (
-            <>
-              <h1>Let's make this space yours ✨</h1>
-              <p className="vc-muted">What should we call you?</p>
-
-              <label>Your name or nickname</label>
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="A name that feels like you"
-              />
-
-              <label>Choose your favourite accent colour</label>
-              <div className="vc-colours">
-                {COLOURS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    aria-label={`Choose ${item}`}
-                    className={`vc-colour ${
-                      colour === item ? "selected" : ""
-                    }`}
-                    style={{ background: item }}
-                    onClick={() => setColour(item)}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                className="vc-primary"
-                onClick={() => {
-                  setSetupStep(1);
-                  setEmotionIndex(0);
-                }}
-              >
-                Let's talk about feelings →
-              </button>
-            </>
-          )}
-
-          {setupStep === 1 && currentEmotion && (
-            <>
-              <div className="vc-progress">
-                <span
-                  style={{
-                    width: `${
-                      ((emotionIndex + 1) / EMOTIONS.length) * 100
-                    }%`,
-                  }}
-                />
-              </div>
-
-              <div className="vc-emotion">{currentEmotion.emoji}</div>
-              <h1>{currentEmotion.question}</h1>
-              <p className="vc-muted">{currentEmotion.hint}</p>
-              <p className="vc-soft">
-                Take your time. There's no right or wrong answer, and you can
-                skip any question.
-              </p>
-
-              <textarea
-                rows="4"
-                value={answers[currentEmotion.name] || ""}
-                onChange={(event) =>
-                  setAnswers((previous) => ({
-                    ...previous,
-                    [currentEmotion.name]: event.target.value,
-                  }))
-                }
-                placeholder="Tell me in your own words…"
-              />
-
-              <div className="vc-actions">
-                <button
-                  type="button"
-                  className="vc-quiet"
-                  onClick={() =>
-                    emotionIndex > 0
-                      ? setEmotionIndex((index) => index - 1)
-                      : setSetupStep(0)
-                  }
-                >
-                  ← Back
-                </button>
-
-                <button
-                  type="button"
-                  className="vc-primary"
-                  onClick={nextEmotion}
-                >
-                  {emotionIndex === EMOTIONS.length - 1
-                    ? "Continue →"
-                    : "Next feeling →"}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="vc-link"
-                onClick={nextEmotion}
-              >
-                Skip this feeling
-              </button>
-            </>
-          )}
-
-          {setupStep === 2 && (
-            <>
-              <h1>How should we support you? 🌿</h1>
-
-              <label>
-                When your inner voice gets tough, what does it usually say?
-              </label>
-              <textarea
-                rows="3"
-                value={selfTalk}
-                onChange={(event) => setSelfTalk(event.target.value)}
-                placeholder="Only share what you're comfortable sharing…"
-              />
-
-              <label>What kind of support feels best?</label>
-              <select
-                value={supportStyle}
-                onChange={(event) => setSupportStyle(event.target.value)}
-              >
-                <option>Gentle reassurance</option>
-                <option>Practical steps</option>
-                <option>Motivation</option>
-                <option>Space to reflect</option>
-                <option>A little humour</option>
-              </select>
-
-              <label>Nightly reflection time</label>
-              <p className="vc-muted">
-                Automatic reflection emails require a separate email service.
-              </p>
-              <select
-                value={reflectionTime}
-                onChange={(event) => setReflectionTime(event.target.value)}
-              >
-                {TIMES.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
-              </select>
-
-              <label className="vc-check">
-                <input
-                  type="checkbox"
-                  checked={reflectionEmail}
-                  onChange={(event) =>
-                    setReflectionEmail(event.target.checked)
-                  }
-                />
-                I'd like to receive nightly reflection emails.
-              </label>
-
-              <div className="vc-actions">
-                <button
-                  type="button"
-                  className="vc-quiet"
-                  onClick={() => setSetupStep(1)}
-                >
-                  ← Back
-                </button>
-
-                <button
-                  type="button"
-                  className="vc-primary"
-                  onClick={saveSetup}
-                >
-                  Finish my space 💜
-                </button>
-              </div>
-            </>
-          )}
-
-          {error && <p className="vc-error">{error}</p>}
+          <button
+            className="vc-primary"
+            type="button"
+            onClick={() => (window.location.href = "/")}
+          >
+            Go to login
+          </button>
         </section>
       </main>
     );
   }
 
+  const pages = [
+    { id: "home", label: "Home", emoji: "✦" },
+    { id: "breathe", label: "Focus & Breathe", emoji: "🌬️" },
+    { id: "buddy", label: "Talk it out", emoji: "🐾" },
+    { id: "journal", label: "Journal", emoji: "📔" },
+    { id: "support", label: "Support", emoji: "🫶" },
+  ];
+
   return (
     <main className="vc-shell">
-      {/* Daily mood-support popup */}
-      <QuietComfort />
-
       <header className="vc-header">
         <div>
-          <p className="vc-eyebrow">A SOFTER PLACE TO LAND</p>
+          <p className="vc-eyebrow">YOUR PERSONAL GALAXY</p>
           <h1>
-            VibeCheck <span>💜</span>
+            Vibe<span>Check</span> ✦
           </h1>
-          <p className="vc-muted">
-            Hey, {profile?.name || name || "friend"}. You don't have to have
-            it all figured out.
-          </p>
+          <p className="vc-muted">A small pause. A little more room to breathe.</p>
         </div>
 
         <button
-          type="button"
           className="vc-quiet"
+          type="button"
           onClick={() => auth.signOut()}
         >
           Sign out
         </button>
       </header>
 
-      <nav className="vc-nav">
-        {[
-          ["home", "Home"],
-          ["checkin", "Mood check-in"],
-          ["journal", "My journal"],
-          ["buddy", "Vibe Buddy"],
-          ["settings", "My space"],
-        ].map(([key, label]) => (
+      <nav className="vc-nav" aria-label="Main navigation">
+        {pages.map((item) => (
           <button
+            key={item.id}
             type="button"
-            key={key}
-            className={page === key ? "active" : ""}
-            onClick={() => {
-              setPage(key);
-              setError("");
-              setMessage("");
-            }}
+            className={page === item.id ? "active" : ""}
+            onClick={() => setPage(item.id)}
           >
-            {label}
+            {item.emoji} {item.label}
           </button>
         ))}
       </nav>
 
-      {message && <p className="vc-success">{message}</p>}
-      {error && <p className="vc-error">{error}</p>}
-
-      {/* Home */}
-      {page === "home" && (
-        <section className="vc-card">
-          <p className="vc-eyebrow">A SMALL CHECK-IN</p>
-          <h2>How are you arriving today?</h2>
-          <p className="vc-muted">
-            You can feel more than one thing at a time.
-          </p>
-
-          <div className="vc-moods">
-            {[
-              "😊 Happy",
-              "😔 Sad",
-              "😰 Anxious",
-              "🌿 Calm",
-              "🥱 Tired",
-              "✨ Excited",
-            ].map((item) => (
-              <button
-                type="button"
-                key={item}
-                className={mood === item ? "selected" : ""}
-                onClick={() => setMood(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
+      {notice && (
+        <div className="vc-notice" role="status">
+          <span>{notice}</span>
           <button
             type="button"
-            className="vc-primary"
-            onClick={() => setPage("checkin")}
+            aria-label="Dismiss message"
+            onClick={() => setNotice("")}
           >
-            Write a little about it →
+            ×
           </button>
-
-          <div className="vc-divider" />
-
-          <h3>A gentle reminder</h3>
-          <p className="vc-muted">
-            You don't need to earn rest, kindness, or support. You deserve
-            them already.
-          </p>
-        </section>
+        </div>
       )}
 
-      {/* Mood check-in */}
-      {page === "checkin" && (
-        <section className="vc-card">
-          <h2>Make room for how you feel 🌙</h2>
-
-          <label>Today's mood</label>
-          <div className="vc-moods">
-            {[
-              "😊 Happy",
-              "😔 Sad",
-              "😰 Anxious",
-              "🌿 Calm",
-              "🥱 Tired",
-              "✨ Excited",
-            ].map((item) => (
-              <button
-                type="button"
-                key={item}
-                className={mood === item ? "selected" : ""}
-                onClick={() => setMood(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          <label>What's on your mind?</label>
-          <textarea
-            rows="5"
-            value={journalText}
-            onChange={(event) => setJournalText(event.target.value)}
-            placeholder="No need to make it sound perfect…"
-          />
-
-          <label>One thing you're grateful for (big or small)</label>
-          <textarea
-            rows="2"
-            value={gratitude}
-            onChange={(event) => setGratitude(event.target.value)}
-            placeholder="Something, someone, or even a tiny moment…"
-          />
-
-          <button
-            type="button"
-            className="vc-primary"
-            onClick={saveJournal}
-          >
-            Save to my journal 💜
-          </button>
-        </section>
-      )}
-
-      {/* Journal */}
-      {page === "journal" && (
-        <section className="vc-card">
-          <h2>Your journal 📖</h2>
-          <p className="vc-muted">
-            Only you can read your journal entries.
-          </p>
-
-          {journal.length === 0 ? (
-            <p className="vc-soft">
-              Your page is open. Add a mood check-in whenever you're ready.
-            </p>
-          ) : (
-            journal.map((entry) => (
-              <article className="vc-entry" key={entry.id}>
-                <p className="vc-eyebrow">
-                  {new Date(entry.date).toLocaleString()}
-                </p>
-
-                {entry.mood && <h3>{entry.mood}</h3>}
-                {entry.text && <p>{entry.text}</p>}
-
-                {entry.gratitude && (
-                  <p className="vc-muted">
-                    Grateful for: {entry.gratitude}
-                  </p>
-                )}
-              </article>
-            ))
-          )}
-        </section>
-      )}
-            {/* Vibe Buddy */}
-            {page === "buddy" && (
-        <section className="vc-card">
-          <p className="vc-eyebrow">FRIENDSHIP, NOT FIXING</p>
-          <h2>Your Vibe Buddy 🤝</h2>
-          <p className="vc-muted">
-            Connect with someone you trust. They must accept your request
-            before you're connected.
-          </p>
-
-          <div className="vc-codebox">
-            <span>Your buddy code</span>
-            <strong>
-              {profile?.buddyCode || makeBuddyCode(user.uid)}
-            </strong>
-            <button
-              type="button"
-              className="vc-quiet"
-              onClick={() => {
-                const code =
-                  profile?.buddyCode || makeBuddyCode(user.uid);
-                navigator.clipboard?.writeText(code);
-                setMessage("Buddy code copied.");
-              }}
-            >
-              Copy code
-            </button>
-          </div>
-
-          <label>Enter your friend's buddy code</label>
-          <input
-            value={buddyCode}
-            onChange={(event) => setBuddyCode(event.target.value)}
-            placeholder="Their 8-character code"
-          />
-
-          <button
-            type="button"
-            className="vc-primary"
-            onClick={sendBuddyRequest}
-          >
-            Send buddy request
-          </button>
-
-          <h3>Requests for you</h3>
-
-          {requests.filter((item) => item.status === "pending").length ===
-          0 ? (
-            <p className="vc-soft">No new requests right now.</p>
-          ) : (
-            requests
-              .filter((item) => item.status === "pending")
-              .map((request) => (
-                <article className="vc-entry" key={request.id}>
-                  <p>
-                    <strong>
-                      {request.fromName || "A VibeCheck user"}
-                    </strong>{" "}
-                    wants to connect.
-                  </p>
-
-                  <div className="vc-actions">
-                    <button
-                      type="button"
-                      className="vc-quiet"
-                      onClick={() => respondToRequest(request, false)}
-                    >
-                      Decline
-                    </button>
-
-                    <button
-                      type="button"
-                      className="vc-primary"
-                      onClick={() => respondToRequest(request, true)}
-                    >
-                      Accept
-                    </button>
-                  </div>
-                </article>
-              ))
-          )}
-
-          <h3>Requests you've sent</h3>
-
-          {sentRequests
-            .filter((item) => item.status === "pending")
-            .map((request) => (
-              <p className="vc-soft" key={request.id}>
-                Request pending…
-              </p>
-            ))}
-
-          <h3>Your connections</h3>
-
-          {connections.filter(
-            (item) => item.active !== false && !item.endedBy
-          ).length === 0 ? (
-            <p className="vc-soft">
-              Your connections will appear here after a request is accepted.
-            </p>
-          ) : (
-            connections
-              .filter(
-                (item) => item.active !== false && !item.endedBy
-              )
-              .map((connection) => (
-                <article className="vc-entry" key={connection.id}>
-                  <h3>You're connected 💜</h3>
-                  <p className="vc-muted">
-                    Mood sharing is off by default. Turn it on only if you
-                    both want to share mood status.
-                  </p>
-
-                  <div className="vc-actions">
-                    <button
-                      type="button"
-                      className="vc-quiet"
-                      onClick={() => toggleMoodSharing(connection)}
-                    >
-                      {connection.moodSharing
-                        ? "Turn mood sharing off"
-                        : "Turn mood sharing on"}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="vc-quiet"
-                      onClick={() => endConnection(connection)}
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                </article>
-              ))
-          )}
-
-          <p className="vc-soft">
-            Vibe Buddy is for mutual support, not professional care. Your
-            journal and private reflections are not shared through this
-            feature.
-          </p>
-        </section>
-      )}
-
-      {/* Settings */}
-      {page === "settings" && (
-        <section className="vc-card">
-          <h2>My space ⚙️</h2>
-
-          <label>Name or nickname</label>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-
-          <label>Accent colour</label>
-          <div className="vc-colours">
-            {COLOURS.map((item) => (
-              <button
-                type="button"
-                key={item}
-                aria-label={`Choose ${item}`}
-                className={`vc-colour ${
-                  colour === item ? "selected" : ""
-                }`}
-                style={{ background: item }}
-                onClick={() => setColour(item)}
-              />
-            ))}
-          </div>
-
-          <label>Preferred support style</label>
-          <select
-            value={supportStyle}
-            onChange={(event) => setSupportStyle(event.target.value)}
-          >
-            <option>Gentle reassurance</option>
-            <option>Practical steps</option>
-            <option>Motivation</option>
-            <option>Space to reflect</option>
-            <option>A little humour</option>
-          </select>
-
-          <label>Nightly reflection time</label>
-          <select
-            value={reflectionTime}
-            onChange={(event) => setReflectionTime(event.target.value)}
-          >
-            {TIMES.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-
-          <label className="vc-check">
-            <input
-              type="checkbox"
-              checked={reflectionEmail}
-              onChange={(event) =>
-                setReflectionEmail(event.target.checked)
-              }
-            />
-            I'd like to receive nightly reflection emails.
-          </label>
-
-          <div className="vc-actions">
-            <button
-              type="button"
-              className="vc-primary"
-              onClick={saveSettings}
-            >
-              Save preferences
-            </button>
-
-            <button
-              type="button"
-              className="vc-quiet"
-              onClick={() => {
-                setSetupStep(0);
-                setEmotionIndex(0);
-                setPage("setup");
-              }}
-            >
-              Repeat my emotion check-in
-            </button>
-          </div>
-        </section>
-      )}
+      {page === "home" && renderHome()}
+      {page === "breathe" && renderBreathing()}
+      {page === "buddy" && renderChat()}
+      {page === "journal" && renderJournal()}
+      {page === "support" && renderSupport()}
 
       <footer className="vc-footer">
-        Made with care. Your feelings are welcome here. 💜
+        Made with care, for the days that feel like a lot. ✦
       </footer>
     </main>
   );
 }
+
+export default App;
