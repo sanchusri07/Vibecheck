@@ -1121,3 +1121,66 @@ body {
     }
   }
   
+.vc-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(5, 4, 18, 0.84);
+  backdrop-filter: blur(12px);
+}
+
+.vc-popup {
+  width: min(100%, 560px);
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: center;
+  border: 1px solid rgba(169, 148, 245, 0.45);
+  box-shadow: 0 0 60px rgba(125, 93, 220, 0.2);
+  animation: vc-popup-appear 0.3s ease-out;
+}
+
+.vc-popup .vc-moods {
+  margin: 24px 0;
+}
+
+.vc-popup .vc-primary {
+  margin-top: 12px;
+}
+
+.vc-popup .vc-entry {
+  margin: 10px 0;
+  padding: 14px;
+  border-radius: 14px;
+  text-align: left;
+}
+
+.vc-popup .vc-actions {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@keyframes vc-popup-appear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .vc-popup-backdrop {
+    padding: 12px;
+  }
+
+  .vc-popup {
+    max-height: 94vh;
+  }
+}
