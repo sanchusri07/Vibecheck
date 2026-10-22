@@ -1,3 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #f6f1ff;
+  background: #0d0b20;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --bg: #0d0b20;
+  --panel: #17142f;
+  --accent: #a994f5;
+  --accent-two: #9cddd2;
+  --muted: #b9b1d0;
+  --line: #ffffff20;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 15% 10%, #39265c70, transparent 40%),
+    radial-gradient(ellipse at 85% 80%, #203b5070, transparent 40%),
+    #0d0b20;
+  color: #f6f1ff;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.vc-shell {
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 48px);
+  color: #f6f1ff;
+}
+
+.vc-card, .vc-panel {
+  background: radial-gradient(circle at top right, #51407630, transparent 45%), #17142f;
+  border: 1px solid #ffffff18;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 48px #0004;
+}
+
+.vc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.vc-header h1, h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+.vc-muted, .vc-soft {
+  color: #b9b1d0;
+  line-height: 1.7;
+}
+
+.vc-eyebrow {
+  color: #a994f5;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+.vc-primary, .vc-quiet {
+  border: 1px solid #a994f560;
+  border-radius: 14px;
+  padding: 12px 18px;
+  color: #f6f1ff;
+  background: #a994f525;
+}
+
+.vc-primary {
+  background: linear-gradient(135deg, #8c72d6, #6551a8);
+}
+
+.vc-primary:hover, .vc-quiet:hover {
+  filter: brightness(1.12);
+}
+
+input, textarea, select {
+  max-width: 100%;
+  border: 1px solid #ffffff25;
+  border-radius: 12px;
+  padding: 12px;
+  color: #f6f1ff;
+  background: #0d0b20;
+}
+
+@media (max-width: 650px) {
+  .vc-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vc-shell {
+    padding: 16px;
+  }
+}
+
 .vc-chat-form {
   flex-direction: column;
 }
@@ -9,7 +126,7 @@
 .vc-actions > button {
   flex: 1;
 }
-}
+
 
 @media (prefers-reduced-motion: reduce) {
 *,
