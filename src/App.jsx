@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -25,17 +26,42 @@ const MOODS = [
 const SOOTHING_SOUNDS = [
   { id: "rain", name: "Gentle Rain", emoji: "🌧️", description: "Soft, steady rainfall." },
   { id: "waves", name: "Ocean Waves", emoji: "🌊", description: "A gentle ocean-like ambience." },
-  { id: "birds", name: "Forest Birds", emoji: "🐦", description: "Soft, high-pitched forest ambience." },
+  { id: "birds", name: "Forest Birds", emoji: "🐦", description: "Soft forest ambience." },
   { id: "fireplace", name: "Fireplace", emoji: "🔥", description: "Gentle crackling-like ambience." },
   { id: "crickets", name: "Night Crickets", emoji: "🌙", description: "A quiet nighttime ambience." },
 ];
 
+const GROUNDING_STEPS = [
+  {
+    count: 5,
+    title: "5 things you can see",
+    prompt: "Slowly look around. Notice five things you can see.",
+  },
+  {
+    count: 4,
+    title: "4 things you can feel",
+    prompt: "Notice four things you can physically feel, like your feet on the floor.",
+  },
+  {
+    count: 3,
+    title: "3 things you can hear",
+    prompt: "Listen quietly for three sounds around you.",
+  },
+  {
+    count: 2,
+    title: "2 things you can smell",
+    prompt: "Notice two scents, or two things whose scent you like.",
+  },
+  {
+    count: 1,
+    title: "1 thing you can taste",
+    prompt: "Notice one taste in your mouth, or take a sip of water and notice it.",
+  },
+];
+
 const todayKey = () => {
   const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
 const HELPLINES = [
@@ -45,11 +71,7 @@ const HELPLINES = [
 
 function BlackDog({ small = false }) {
   return (
-    <div
-      className={`vc-dog ${small ? "vc-dog-small" : ""}`}
-      aria-label="Cute black dog companion"
-      role="img"
-    >
+    <div className={`vc-dog ${small ? "vc-dog-small" : ""}`} aria-label="Cute black dog companion" role="img">
       <span className="vc-dog-ear vc-dog-ear-left" />
       <span className="vc-dog-ear vc-dog-ear-right" />
       <span className="vc-dog-face">
@@ -66,14 +88,10 @@ function BlackDog({ small = false }) {
   );
 }
 
-/* Browser-generated ambience: no external sound files are required. */
+/* Browser-generated ambience; no external audio files are needed. */
 function createAmbientSound(type, volume) {
-  const AudioContextClass =
-    window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContextClass) {
-    throw new Error("Your browser does not support generated audio. Try a recent version of Chrome.");
-  }
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) throw new Error("Your browser does not support generated audio.");
 
   const context = new AudioContextClass();
   const master = context.createGain();
@@ -85,16 +103,9 @@ function createAmbientSound(type, volume) {
   let timer = null;
 
   function addNoise({ frequency = 1000, q = 0.5, gain = 0.2, filter = "lowpass" } = {}) {
-    const buffer = context.createBuffer(
-      1,
-      context.sampleRate * 2,
-      context.sampleRate
-    );
+    const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
     const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
     const source = context.createBufferSource();
     source.buffer = buffer;
@@ -112,93 +123,64 @@ function createAmbientSound(type, volume) {
     biquad.connect(level);
     level.connect(master);
     source.start();
-
     nodes.push(source, biquad, level);
     return { source, biquad, level };
   }
 
-  function addTone(frequency, gain = 0.04, wave = "sine") {
-    const oscillator = context.createOscillator();
-    const level = context.createGain();
-
-    oscillator.type = wave;
-    oscillator.frequency.value = frequency;
-    level.gain.value = gain;
-
-    oscillator.connect(level);
-    level.connect(master);
-    oscillator.start();
-
-    nodes.push(oscillator, level);
-    return { oscillator, level };
-  }
-
   if (type === "rain") {
-    addNoise({ frequency: 1400, q: 0.4, gain: 0.42, filter: "lowpass" });
-    addNoise({ frequency: 350, q: 0.5, gain: 0.25, filter: "lowpass" });
+    addNoise({ frequency: 1400, gain: 0.42 });
+    addNoise({ frequency: 350, gain: 0.25 });
   } else if (type === "waves") {
-    const noise = addNoise({ frequency: 600, q: 0.3, gain: 0.42, filter: "lowpass" });
+    const noise = addNoise({ frequency: 600, gain: 0.42 });
     const swell = context.createOscillator();
     const swellGain = context.createGain();
-
     swell.frequency.value = 0.09;
     swellGain.gain.value = 0.17;
     swell.connect(swellGain);
     swellGain.connect(noise.level.gain);
     swell.start();
-
     nodes.push(swell, swellGain);
   } else if (type === "birds") {
-    addNoise({ frequency: 500, q: 0.7, gain: 0.08, filter: "lowpass" });
+    addNoise({ frequency: 500, gain: 0.08 });
     const chirp = () => {
       if (stopped || context.state === "closed") return;
-
       const oscillator = context.createOscillator();
       const level = context.createGain();
       const now = context.currentTime;
-
       oscillator.type = "sine";
       oscillator.frequency.setValueAtTime(1800 + Math.random() * 1200, now);
       oscillator.frequency.exponentialRampToValueAtTime(900 + Math.random() * 500, now + 0.12);
-
       level.gain.setValueAtTime(0.0001, now);
       level.gain.exponentialRampToValueAtTime(0.07, now + 0.025);
       level.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-
       oscillator.connect(level);
       level.connect(master);
       oscillator.start(now);
       oscillator.stop(now + 0.18);
       nodes.push(oscillator, level);
-
       timer = setTimeout(chirp, 350 + Math.random() * 1300);
     };
     chirp();
   } else if (type === "fireplace") {
-    addNoise({ frequency: 800, q: 0.8, gain: 0.18, filter: "lowpass" });
-    addNoise({ frequency: 2500, q: 1, gain: 0.1, filter: "highpass" });
+    addNoise({ frequency: 800, gain: 0.18 });
+    addNoise({ frequency: 2500, gain: 0.1, filter: "highpass" });
   } else if (type === "crickets") {
-    addNoise({ frequency: 500, q: 0.5, gain: 0.04, filter: "lowpass" });
-
+    addNoise({ frequency: 500, gain: 0.04 });
     const cricket = () => {
       if (stopped || context.state === "closed") return;
-
       const oscillator = context.createOscillator();
       const level = context.createGain();
       const now = context.currentTime;
-
       oscillator.type = "sine";
       oscillator.frequency.value = 4200 + Math.random() * 900;
       level.gain.setValueAtTime(0.0001, now);
       level.gain.linearRampToValueAtTime(0.045, now + 0.025);
       level.gain.linearRampToValueAtTime(0.0001, now + 0.12);
-
       oscillator.connect(level);
       level.connect(master);
       oscillator.start(now);
       oscillator.stop(now + 0.13);
       nodes.push(oscillator, level);
-
       timer = setTimeout(cricket, 250 + Math.random() * 600);
     };
     cricket();
@@ -207,34 +189,16 @@ function createAmbientSound(type, volume) {
   return {
     context,
     setVolume(value) {
-      master.gain.setTargetAtTime(
-        Math.max(0, Math.min(1, value)) * 0.22,
-        context.currentTime,
-        0.04
-      );
+      master.gain.setTargetAtTime(Math.max(0, Math.min(1, value)) * 0.22, context.currentTime, 0.04);
     },
     async stop() {
       stopped = true;
       if (timer) clearTimeout(timer);
-
       nodes.forEach((node) => {
-        try {
-          if (typeof node.stop === "function") node.stop();
-        } catch {
-          // Node may already have stopped.
-        }
-        try {
-          node.disconnect();
-        } catch {
-          // Node may already be disconnected.
-        }
+        try { if (typeof node.stop === "function") node.stop(); } catch {}
+        try { node.disconnect(); } catch {}
       });
-
-      try {
-        if (context.state !== "closed") await context.close();
-      } catch {
-        // Ignore browser audio cleanup errors.
-      }
+      try { if (context.state !== "closed") await context.close(); } catch {}
     },
   };
 }
@@ -249,6 +213,10 @@ function App() {
   const [selectedMood, setSelectedMood] = useState("");
   const [checkinText, setCheckinText] = useState("");
   const [todayCheckin, setTodayCheckin] = useState(null);
+
+  const [showMoodPopup, setShowMoodPopup] = useState(false);
+  const [showGroundingPopup, setShowGroundingPopup] = useState(false);
+  const [groundingStep, setGroundingStep] = useState(0);
 
   const [journalText, setJournalText] = useState("");
   const [journalMood, setJournalMood] = useState("");
@@ -291,40 +259,42 @@ function App() {
     return unsubscribe;
   }, []);
 
+  // Show the mood popup when authentication finishes for a signed-in user.
+  useEffect(() => {
+    if (!authLoading && user) {
+      setShowMoodPopup(true);
+      setShowGroundingPopup(false);
+    }
+  }, [authLoading, user]);
+
   useEffect(() => {
     if (!uid) return;
     let active = true;
 
     async function loadData() {
       try {
-        const [checkinSnapshot, journalSnapshot, contactSnapshot] =
-          await Promise.all([
-            getDocs(collection(db, "users", uid, "checkins")),
-            getDocs(query(collection(db, "users", uid, "journals"), orderBy("createdAt", "desc"))),
-            getDocs(collection(db, "users", uid, "emergencyContacts")),
-          ]);
+        const [checkinSnapshot, journalSnapshot, contactSnapshot] = await Promise.all([
+          getDocs(collection(db, "users", uid, "checkins")),
+          getDocs(query(collection(db, "users", uid, "journals"), orderBy("createdAt", "desc"))),
+          getDocs(collection(db, "users", uid, "emergencyContacts")),
+        ]);
 
         if (!active) return;
 
-        const checkins = checkinSnapshot.docs.map((item) => ({
-          id: item.id,
-          ...item.data(),
-        }));
+        const checkins = checkinSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        const existingCheckin = checkins.find((item) => item.date === todayKey()) || null;
 
-        setTodayCheckin(checkins.find((item) => item.date === todayKey()) || null);
-        setJournalEntries(journalSnapshot.docs.map((item) => ({
-          id: item.id,
-          ...item.data(),
-        })));
-        setContacts(contactSnapshot.docs.map((item) => ({
-          id: item.id,
-          ...item.data(),
-        })));
+        setTodayCheckin(existingCheckin);
+        if (existingCheckin) {
+          setSelectedMood(existingCheckin.mood || "");
+          setCheckinText(existingCheckin.reflection || "");
+        }
+
+        setJournalEntries(journalSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+        setContacts(contactSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
       } catch (error) {
         console.error("Could not load VibeCheck data:", error);
-        if (active) {
-          setNotice("We couldn't load some saved data. Please check your connection and Firestore rules.");
-        }
+        if (active) setNotice("We couldn't load some saved data. Please check your connection and Firestore rules.");
       }
     }
 
@@ -342,11 +312,13 @@ function App() {
         URL.revokeObjectURL(customUrlRef.current);
         customUrlRef.current = null;
       }
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, []);
 
   useEffect(() => {
     if (ambientRef.current) ambientRef.current.setVolume(soundVolume);
+    if (uploadAudioRef.current) uploadAudioRef.current.volume = soundVolume;
   }, [soundVolume]);
 
   const entriesForSelectedDate = useMemo(
@@ -483,19 +455,13 @@ function App() {
 
       setChatMessages((previous) => [
         ...previous,
-        {
-          role: "assistant",
-          content: data.reply || "I'm here with you. Want to tell me a little more?",
-        },
+        { role: "assistant", content: data.reply || "I'm here with you. Want to tell me a little more?" },
       ]);
     } catch (error) {
       console.error(error);
       setChatMessages((previous) => [
         ...previous,
-        {
-          role: "assistant",
-          content: "My little paws got tangled connecting just now 🐾 Please try again in a moment.",
-        },
+        { role: "assistant", content: "My little paws got tangled connecting just now 🐾 Please try again in a moment." },
       ]);
     } finally {
       setBusy(false);
@@ -575,7 +541,6 @@ function App() {
 
       const sound = createAmbientSound(activeSound, soundVolume);
       ambientRef.current = sound;
-
       await sound.context.resume();
       setSoundPlaying(true);
     } catch (error) {
@@ -623,6 +588,42 @@ function App() {
     event.target.value = "";
   }
 
+  function closeMoodPopup() {
+    setShowMoodPopup(false);
+    setShowGroundingPopup(false);
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }
+
+  function continueFromMood() {
+    if (!selectedMood) return;
+
+    if (["Anxious", "Sad", "Tired"].includes(selectedMood)) {
+      setShowGroundingPopup(true);
+      setGroundingStep(0);
+    } else {
+      closeMoodPopup();
+      setPage("home");
+    }
+  }
+
+  function advanceGrounding() {
+    const step = GROUNDING_STEPS[groundingStep];
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const speech = new SpeechSynthesisUtterance(step.prompt);
+      speech.rate = 0.9;
+      window.speechSynthesis.speak(speech);
+    }
+
+    if (groundingStep < GROUNDING_STEPS.length - 1) {
+      setGroundingStep((previous) => previous + 1);
+    } else {
+      closeMoodPopup();
+      setPage("home");
+    }
+  }
+
   function renderHome() {
     return (
       <>
@@ -630,10 +631,7 @@ function App() {
           <div>
             <p className="vc-eyebrow">A LITTLE SPACE FOR YOU</p>
             <h2>Hey there, stargazer ✨</h2>
-            <p className="vc-muted">
-              You don't have to figure everything out today. Take five minutes
-              to check in, breathe, or simply be.
-            </p>
+            <p className="vc-muted">You don't have to figure everything out today. Take five minutes to check in, breathe, or simply be.</p>
           </div>
           <BlackDog />
         </section>
@@ -677,7 +675,7 @@ function App() {
         <section className="vc-feature-grid">
           <button className="vc-card vc-feature" type="button" onClick={() => setPage("breathe")}>
             <span className="vc-feature-icon">🌬️</span>
-            <h3>Focus & Breathe</h3>
+            <h3>Focus &amp; Breathe</h3>
             <p className="vc-muted">A small breathing break, just for you.</p>
           </button>
           <button className="vc-card vc-feature" type="button" onClick={() => setPage("buddy")}>
@@ -710,10 +708,7 @@ function App() {
       <section className="vc-card vc-breathing">
         <p className="vc-eyebrow">SLOW DOWN A LITTLE</p>
         <h2>Let's breathe together</h2>
-        <p className="vc-muted">
-          Follow the circle at a comfortable pace. If focusing on your breath
-          feels uncomfortable, stop and simply notice the room around you.
-        </p>
+        <p className="vc-muted">Follow the circle at a comfortable pace. If focusing on your breath feels uncomfortable, stop and simply notice the room around you.</p>
         <div className={`vc-breath-circle ${breathing ? "is-breathing" : ""}`} aria-live="polite">
           <div className="vc-breath-inner"><span>✦</span><p>{breathPhase}</p></div>
         </div>
@@ -856,10 +851,9 @@ function App() {
   }
 
   function renderSoothingSounds() {
-    const selectedSound =
-      activeSound === "custom" && customSound
-        ? customSound
-        : SOOTHING_SOUNDS.find((sound) => sound.id === activeSound) || SOOTHING_SOUNDS[0];
+    const selectedSound = activeSound === "custom" && customSound
+      ? customSound
+      : SOOTHING_SOUNDS.find((sound) => sound.id === activeSound) || SOOTHING_SOUNDS[0];
 
     return (
       <section className="vc-card vc-sounds-page">
@@ -902,27 +896,18 @@ function App() {
               preload="metadata"
               onPlay={() => { setSoundPlaying(true); setSoundError(""); }}
               onPause={() => setSoundPlaying(false)}
-              onError={() => {
-                setSoundPlaying(false);
-                setSoundError("This file format could not be played by your browser. Try an MP3 or WAV file.");
-              }}
+              onError={() => { setSoundPlaying(false); setSoundError("This file format could not be played. Try an MP3 or WAV file."); }}
             />
           )}
 
           <div className="vc-actions">
-            <button className="vc-primary" type="button" onClick={playSelectedSound}>
-              {soundPlaying ? "Ⅱ Pause sound" : "▶ Play sound"}
-            </button>
+            <button className="vc-primary" type="button" onClick={playSelectedSound}>{soundPlaying ? "Ⅱ Pause sound" : "▶ Play sound"}</button>
             <button className="vc-quiet" type="button" onClick={stopSound}>Stop</button>
           </div>
 
           <label htmlFor="sound-volume">Volume: {Math.round(soundVolume * 100)}%</label>
           <input id="sound-volume" className="vc-volume" type="range" min="0" max="1" step="0.05" value={soundVolume} onChange={(event) => setSoundVolume(Number(event.target.value))} />
-
-          <p className="vc-soft" aria-live="polite">
-            {soundPlaying ? "Take your time. Pause whenever you like. ✨" : "Press play when you're ready."}
-          </p>
-
+          <p className="vc-soft" aria-live="polite">{soundPlaying ? "Take your time. Pause whenever you like. ✨" : "Press play when you're ready."}</p>
           {soundError && <p className="vc-sound-error" role="status">{soundError}</p>}
         </div>
 
@@ -994,6 +979,72 @@ function App() {
         <div className="vc-notice" role="status">
           <span>{notice}</span>
           <button type="button" aria-label="Dismiss message" onClick={() => setNotice("")}>×</button>
+        </div>
+      )}
+
+      {/* Daily mood popup */}
+      {showMoodPopup && !showGroundingPopup && (
+        <div className="vc-popup-backdrop">
+          <section className="vc-popup vc-card" role="dialog" aria-modal="true" aria-labelledby="mood-popup-title">
+            <BlackDog />
+            <p className="vc-eyebrow">YOUR DAILY PAUSE ✦</p>
+            <h2 id="mood-popup-title">How are you feeling today?</h2>
+            <p className="vc-muted">Take a little pause. There are no right or wrong answers.</p>
+
+            <div className="vc-moods">
+              {MOODS.map((mood) => (
+                <button
+                  key={mood.name}
+                  type="button"
+                  className={`vc-mood-option ${selectedMood === mood.name ? "selected" : ""}`}
+                  style={{ "--mood-color": mood.color }}
+                  onClick={() => setSelectedMood(mood.name)}
+                >
+                  <span>{mood.emoji}</span>{mood.name}
+                </button>
+              ))}
+            </div>
+
+            <button className="vc-primary" type="button" disabled={!selectedMood} onClick={continueFromMood}>
+              Continue ✨
+            </button>
+            <p className="vc-soft">A small check-in, just for you.</p>
+          </section>
+        </div>
+      )}
+
+      {/* 5–4–3–2–1 grounding popup */}
+      {showGroundingPopup && (
+        <div className="vc-popup-backdrop">
+          <section className="vc-popup vc-card" role="dialog" aria-modal="true" aria-labelledby="grounding-title">
+            <p className="vc-eyebrow">LET'S FIND OUR WAY BACK 🌙</p>
+            <h2 id="grounding-title">The 5–4–3–2–1 grounding pause</h2>
+            <p className="vc-muted">Take this slowly. You can listen to each prompt or simply read it.</p>
+
+            {GROUNDING_STEPS.map((step, index) => (
+              <div
+                key={step.count}
+                className="vc-entry"
+                style={{
+                  opacity: groundingStep === index ? 1 : 0.55,
+                  border: groundingStep === index ? "1px solid #a994f5" : undefined,
+                }}
+              >
+                <strong>{step.count} — {step.title}</strong>
+                {groundingStep === index && <p>{step.prompt}</p>}
+              </div>
+            ))}
+
+            <div className="vc-actions">
+              <button className="vc-primary" type="button" onClick={advanceGrounding}>
+                {groundingStep < 4 ? "Next step →" : "Finish and continue ✨"}
+              </button>
+              <button className="vc-quiet" type="button" onClick={closeMoodPopup}>
+                Skip for now
+              </button>
+            </div>
+            <p className="vc-soft">Press Next step to hear the current prompt read aloud when your browser supports speech.</p>
+          </section>
         </div>
       )}
 

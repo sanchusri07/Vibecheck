@@ -933,3 +933,157 @@ body {
     animation: none;
   }
 }
+
+/* VibeCheck — Soothing Sounds */
+
+.vc-sounds-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.vc-shell .vc-sound-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid rgba(189, 167, 255, 0.2);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #eee8ff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.vc-shell .vc-sound-card:hover,
+.vc-shell .vc-sound-card.selected {
+  border-color: #a994f5;
+  background: rgba(169, 148, 245, 0.1);
+}
+
+.vc-sound-emoji {
+  font-size: 1.8rem;
+}
+
+.vc-sound-card strong {
+  font-size: 1rem;
+}
+
+.vc-sound-card > span:last-child {
+  color: #bcb4d3;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.vc-sound-player,
+.vc-sound-upload {
+  margin-top: 22px;
+  padding: 22px;
+  border: 1px solid rgba(189, 167, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(8, 7, 24, 0.35);
+}
+
+.vc-sound-player audio {
+  display: block;
+  width: 100%;
+  margin: 18px 0;
+}
+
+.vc-sound-upload input[type="file"] {
+  display: block;
+  margin-top: 14px;
+  font-size: 0.9rem;
+}
+
+.vc-sound-upload .vc-upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+  cursor: pointer;
+}
+
+.vc-sound-error {
+  color: #ffb9c4;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .vc-sounds-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-sound-player,
+  .vc-sound-upload {
+    padding: 17px;
+  }
+}
+
+.vc-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(5, 4, 18, 0.84);
+  backdrop-filter: blur(12px);
+}
+
+.vc-popup {
+  width: min(100%, 560px);
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: center;
+  border: 1px solid rgba(169, 148, 245, 0.45);
+  box-shadow: 0 0 60px rgba(125, 93, 220, 0.2);
+  animation: vc-popup-appear 0.3s ease-out;
+}
+
+.vc-popup .vc-moods {
+  margin: 24px 0;
+}
+
+.vc-popup .vc-primary {
+  margin-top: 12px;
+}
+
+.vc-popup .vc-entry {
+  margin: 10px 0;
+  padding: 14px;
+  border-radius: 14px;
+  text-align: left;
+}
+
+.vc-popup .vc-actions {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@keyframes vc-popup-appear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .vc-popup-backdrop {
+    padding: 12px;
+  }
+
+  .vc-popup {
+    max-height: 94vh;
+  }
+}
