@@ -1087,3 +1087,136 @@ body {
     max-height: 94vh;
   }
 }
+
+/* Feel Good — VibeCheck comfort cards */
+.vc-feelgood {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 0 36px;
+  color: #f6f1ff;
+}
+
+.vc-feelgood-heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.vc-feelgood-heading h2 {
+  margin: 8px 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  color: #f6f1ff;
+}
+
+.vc-feelgood-heading h2 span {
+  color: #bca8ff;
+}
+
+.vc-feelgood-toolbar,
+.vc-feelgood-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.vc-feelgood-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 570px;
+  min-height: 330px;
+  margin: 24px auto;
+  padding: 36px 28px;
+  overflow: hidden;
+  text-align: center;
+  color: #f8f3ff;
+  cursor: pointer;
+  border: 1px solid #b9a4ff65;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 15% 15%, #8f70d83b, transparent 42%),
+    radial-gradient(ellipse at 85% 85%, #7dcfc51b, transparent 45%),
+    linear-gradient(145deg, #211a40, #121025 75%);
+  box-shadow: 0 18px 55px #0005, 0 0 35px #a994f514;
+  transition: border-color .25s ease, transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.vc-feelgood-card:hover {
+  transform: translateY(-3px);
+  border-color: #c8b7ff;
+  box-shadow: 0 22px 60px #0006, 0 0 35px #a994f525;
+}
+
+.vc-feelgood-card:focus-visible {
+  outline: 2px solid #c8b7ff;
+  outline-offset: 4px;
+}
+
+.vc-feelgood-stars {
+  color: #d4c4ff;
+  letter-spacing: 8px;
+}
+
+.vc-feelgood-emoji {
+  font-size: 2.8rem;
+}
+
+.vc-feelgood-category {
+  color: #c8b7ff;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.vc-feelgood-message {
+  max-width: 440px;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  line-height: 1.65;
+}
+
+.vc-feelgood-hint {
+  color: #b9b1d0;
+  font-size: .85rem;
+}
+
+.vc-feelgood-count {
+  color: #b9b1d0;
+  text-align: center;
+  font-size: .85rem;
+}
+
+.vc-feelgood-empty {
+  text-align: center;
+}
+
+.vc-feelgood-empty > span {
+  font-size: 2.5rem;
+}
+
+@media (max-width: 600px) {
+  .vc-feelgood-card {
+    min-height: 300px;
+    padding: 28px 20px;
+    border-radius: 22px;
+  }
+
+  .vc-feelgood-actions > button {
+    flex: 1 1 130px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-feelgood-card {
+    transition: none;
+  }
+}

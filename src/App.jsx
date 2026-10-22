@@ -1061,3 +1061,203 @@ function App() {
 }
 
 export default App;
+
+function FeelGood() {
+  const cards = [
+    {
+      emoji: "💌",
+      category: "A little reminder",
+      front: "What do you need to hear today?",
+      back: "You don't have to have everything figured out. You're allowed to learn, grow, and take life one little step at a time.",
+    },
+    {
+      emoji: "🌙",
+      category: "For tired days",
+      front: "What if you don't have the energy today?",
+      back: "You are allowed to rest. Your worth isn't measured by how much you accomplish. Take a gentle pause.",
+    },
+    {
+      emoji: "🌷",
+      category: "Be kind to yourself",
+      front: "Would you talk to a friend this way?",
+      back: "You deserve the same patience and kindness you give to the people you love. Try speaking gently to yourself, too.",
+    },
+    {
+      emoji: "✨",
+      category: "When you feel behind",
+      front: "What if your journey looks different?",
+      back: "You don't have to follow somebody else's timeline. Your little steps count, even when nobody else sees them.",
+    },
+    {
+      emoji: "🪻",
+      category: "For difficult moments",
+      front: "What is one small thing you can do?",
+      back: "You don't need to solve everything right now. Drink some water, breathe comfortably, or take one manageable step.",
+    },
+    {
+      emoji: "☁️",
+      category: "When your mind feels loud",
+      front: "Can you give yourself a moment?",
+      back: "You don't have to answer every thought. Let this moment be simple. You can pause and return when you're ready.",
+    },
+    {
+      emoji: "🫶",
+      category: "A reminder of connection",
+      front: "Do you have to handle everything alone?",
+      back: "It's okay to reach out to someone you trust. You deserve support, understanding, and a space to be yourself.",
+    },
+    {
+      emoji: "🌱",
+      category: "Little wins",
+      front: "What is something you managed today?",
+      back: "Getting through an ordinary day can take effort, too. Give yourself credit for the small things you did.",
+    },
+  ];
+
+  const [active, setActive] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const availableCards = showFavorites
+    ? cards.filter((card) => favorites.includes(card.front))
+    : cards;
+
+  const current = availableCards[active];
+
+  function nextCard() {
+    if (!availableCards.length) return;
+    setActive((active + 1) % availableCards.length);
+    setRevealed(false);
+  }
+
+  function toggleFavorite() {
+    if (!current) return;
+
+    setFavorites((old) =>
+      old.includes(current.front)
+        ? old.filter((item) => item !== current.front)
+        : [...old, current.front]
+    );
+  }
+
+  function surpriseMe() {
+    if (!availableCards.length) return;
+
+    const randomIndex = Math.floor(
+      Math.random() * availableCards.length
+    );
+
+    setActive(randomIndex);
+    setRevealed(false);
+  }
+
+  useEffect(() => {
+    if (active >= availableCards.length) {
+      setActive(0);
+      setRevealed(false);
+    }
+  }, [active, availableCards.length]);
+
+  return (
+    <section className="vc-feelgood">
+      <div className="vc-feelgood-heading">
+        <p className="vc-eyebrow">YOUR LITTLE CORNER OF COMFORT</p>
+        <h2>Feel Good <span>✦</span></h2>
+        <p className="vc-muted">
+          A little note for whatever kind of day you're having.
+        </p>
+      </div>
+
+      <div className="vc-feelgood-toolbar">
+        <button
+          className="vc-quiet"
+          onClick={() => {
+            setShowFavorites(false);
+            setActive(0);
+            setRevealed(false);
+          }}
+        >
+          All notes
+        </button>
+
+        <button
+          className="vc-quiet"
+          onClick={() => {
+            setShowFavorites(true);
+            setActive(0);
+            setRevealed(false);
+          }}
+        >
+          ♡ Favourites ({favorites.length})
+        </button>
+      </div>
+
+      {current ? (
+        <>
+          <button
+            type="button"
+            className={`vc-feelgood-card ${revealed ? "is-revealed" : ""}`}
+            onClick={() => setRevealed(!revealed)}
+            aria-label={revealed ? "Hide the note" : "Reveal the note"}
+          >
+            <span className="vc-feelgood-stars">✦ · ˚ ✧ · ✦</span>
+            <span className="vc-feelgood-emoji">{current.emoji}</span>
+            <span className="vc-feelgood-category">
+              {current.category}
+            </span>
+
+            <span className="vc-feelgood-message">
+              {revealed ? current.back : current.front}
+            </span>
+
+            <span className="vc-feelgood-hint">
+              {revealed ? "♡ take what you need ♡" : "Tap to reveal your note"}
+            </span>
+          </button>
+
+          <div className="vc-feelgood-actions">
+            <button
+              className="vc-secondary"
+              onClick={toggleFavorite}
+            >
+              {favorites.includes(current.front)
+                ? "♥ Saved"
+                : "♡ Save note"}
+            </button>
+
+            <button className="vc-primary" onClick={nextCard}>
+              Next note →
+            </button>
+
+            <button className="vc-secondary" onClick={surpriseMe}>
+              ✨ Surprise me
+            </button>
+          </div>
+
+          <p className="vc-feelgood-count">
+            Note {active + 1} of {availableCards.length}
+          </p>
+        </>
+      ) : (
+        <div className="vc-card vc-feelgood-empty">
+          <span>💌</span>
+          <h3>No favourites saved yet</h3>
+          <p className="vc-muted">
+            Find a note that speaks to you and save it here.
+          </p>
+          <button
+            className="vc-primary"
+            onClick={() => {
+              setShowFavorites(false);
+              setActive(0);
+            }}
+          >
+            Explore notes
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
