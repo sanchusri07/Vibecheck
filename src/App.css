@@ -390,3 +390,548 @@
     animation: none;
   }
 }
+
+
+/* ========================================
+   VIBECHECK — RESTORE THE GALAXY DASHBOARD
+   Add this below your existing CSS.
+======================================== */
+
+/* Page background and typography */
+:root {
+  color-scheme: dark;
+  --vc-bg: #0d0b20;
+  --vc-panel: #17142f;
+  --vc-purple: #a994f5;
+  --vc-mint: #9cddd2;
+  --vc-text: #f0eaff;
+  --vc-muted: #bcb4d3;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      ellipse at 15% 5%,
+      rgba(116, 91, 190, 0.14),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 85% 65%,
+      rgba(80, 120, 150, 0.08),
+      transparent 45%
+    ),
+    var(--vc-bg);
+  color: var(--vc-text);
+  font-family: "DM Sans", sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.vc-shell,
+.vc-shell * {
+  box-sizing: border-box;
+}
+
+.vc-shell {
+  width: min(100% - 36px, 1080px);
+  margin: 0 auto;
+  padding: 36px 0 24px;
+  color: var(--vc-text);
+}
+
+.vc-shell h1,
+.vc-shell h2,
+.vc-shell h3 {
+  color: #f0eaff;
+  line-height: 1.35;
+}
+
+.vc-shell h1,
+.vc-shell h2 {
+  font-family: "Playfair Display", serif;
+}
+
+.vc-shell p {
+  line-height: 1.7;
+}
+
+.vc-shell .vc-muted {
+  color: var(--vc-muted);
+}
+
+.vc-shell .vc-eyebrow {
+  color: var(--vc-mint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.vc-shell .vc-soft {
+  color: #c9c2dc;
+  font-size: 0.9rem;
+}
+
+/* Header */
+.vc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.vc-header h1 {
+  margin: 8px 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.vc-header h1 span {
+  color: var(--vc-purple);
+}
+
+.vc-header > div {
+  min-width: 0;
+}
+
+/* Main navigation */
+.vc-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(189, 167, 255, 0.15);
+}
+
+.vc-nav button {
+  padding: 10px 15px;
+  border: 1px solid rgba(189, 167, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #d8d0ee;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.vc-nav button:hover,
+.vc-nav button.active {
+  border-color: var(--vc-purple);
+  background: rgba(169, 148, 245, 0.13);
+  color: #fff;
+}
+
+/* Cards and dashboard layout */
+.vc-shell .vc-card {
+  margin-bottom: 22px;
+  padding: 28px;
+  border: 1px solid rgba(189, 167, 255, 0.16);
+  border-radius: 22px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(169, 148, 245, 0.07),
+      transparent 45%
+    ),
+    rgba(23, 20, 47, 0.94);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.16);
+}
+
+.vc-shell .vc-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.vc-welcome > div:first-child {
+  flex: 1;
+}
+
+.vc-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.vc-shell .vc-feature {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  color: var(--vc-text);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.vc-shell .vc-feature:hover {
+  transform: translateY(-3px);
+  border-color: rgba(169, 148, 245, 0.55);
+}
+
+.vc-feature-icon {
+  font-size: 1.8rem;
+}
+
+/* Mood selection */
+.vc-moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.vc-shell .vc-mood-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(189, 167, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #eee8ff;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.vc-shell .vc-mood-option:hover,
+.vc-shell .vc-mood-option.selected {
+  border-color: var(--mood-color, var(--vc-purple));
+  background: rgba(169, 148, 245, 0.12);
+}
+
+/* Inputs */
+.vc-shell label {
+  display: block;
+  margin: 18px 0 8px;
+  color: #e6def8;
+  font-size: 0.94rem;
+}
+
+.vc-shell input:not([type="checkbox"]),
+.vc-shell textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(189, 167, 255, 0.22);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(8, 7, 24, 0.55);
+  color: #f0eaff;
+  font: inherit;
+  line-height: 1.6;
+}
+
+.vc-shell textarea {
+  resize: vertical;
+}
+
+.vc-shell input:focus,
+.vc-shell textarea:focus {
+  border-color: var(--vc-purple);
+  box-shadow: 0 0 0 3px rgba(169, 148, 245, 0.1);
+}
+
+.vc-shell input::placeholder,
+.vc-shell textarea::placeholder {
+  color: #9188ad;
+}
+
+.vc-shell input[type="date"] {
+  color-scheme: dark;
+}
+
+/* Buttons */
+.vc-shell button {
+  font-family: inherit;
+}
+
+.vc-shell .vc-primary,
+.vc-shell .vc-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.vc-shell .vc-primary {
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, #a994f5, #8f80d8);
+  color: #17122c;
+  font-weight: 700;
+}
+
+.vc-shell .vc-primary:hover {
+  background: linear-gradient(135deg, #bcaeff, #a994f5);
+}
+
+.vc-shell .vc-quiet {
+  border: 1px solid rgba(189, 167, 255, 0.23);
+  background: rgba(255, 255, 255, 0.035);
+  color: #e8e0fb;
+}
+
+.vc-shell .vc-quiet:hover {
+  border-color: var(--vc-purple);
+  background: rgba(169, 148, 245, 0.1);
+}
+
+.vc-shell button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vc-shell button:focus-visible,
+.vc-shell a:focus-visible {
+  outline: 2px solid #cbbaff;
+  outline-offset: 3px;
+}
+
+/* Exercise and journal content */
+.vc-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.vc-breathing {
+  text-align: center;
+}
+
+.vc-breath-circle {
+  display: grid;
+  place-items: center;
+  width: min(240px, 65vw);
+  aspect-ratio: 1;
+  margin: 30px auto;
+  border: 1px solid rgba(189, 167, 255, 0.4);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(169, 148, 245, 0.19),
+    rgba(169, 148, 245, 0.025) 70%
+  );
+  box-shadow: 0 0 45px rgba(169, 148, 245, 0.1);
+}
+
+.vc-breath-inner {
+  padding: 16px;
+  text-align: center;
+}
+
+.vc-breath-inner > span {
+  color: var(--vc-purple);
+  font-size: 1.8rem;
+}
+
+.vc-breath-inner p {
+  color: #eee8ff;
+}
+
+.vc-breath-circle.is-breathing {
+  animation: vc-breathe-glow 4s ease-in-out infinite alternate;
+}
+
+@keyframes vc-breathe-glow {
+  from {
+    box-shadow: 0 0 22px rgba(169, 148, 245, 0.12);
+    transform: scale(0.96);
+  }
+  to {
+    box-shadow: 0 0 42px rgba(169, 148, 245, 0.24);
+    transform: scale(1.03);
+  }
+}
+
+.vc-shell .vc-entry {
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid rgba(189, 167, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #e7e0f7;
+}
+
+.vc-entry p {
+  overflow-wrap: anywhere;
+}
+
+.vc-shell .vc-entry-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vc-entry-mood {
+  color: var(--vc-mint);
+}
+
+.vc-shell a {
+  color: var(--vc-mint);
+}
+
+.vc-calendar-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.vc-shell .vc-calendar-day {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  min-width: 42px;
+  padding: 8px;
+  border: 1px solid rgba(189, 167, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #eee8ff;
+  cursor: pointer;
+}
+
+.vc-calendar-day.selected {
+  border-color: var(--vc-purple);
+}
+
+.vc-calendar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* Notices and footer */
+.vc-shell .vc-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid rgba(169, 148, 245, 0.25);
+  border-radius: 12px;
+  background: rgba(169, 148, 245, 0.08);
+  color: #eee8ff;
+}
+
+.vc-notice button {
+  border: 0;
+  background: transparent;
+  color: #eee8ff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.vc-footer {
+  padding: 24px 0 8px;
+  color: #9389ad;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Popup: preserve your existing galaxy modal design */
+.vc-checkin-overlay {
+  z-index: 9999;
+}
+
+.vc-checkin-popup {
+  padding: 34px 28px;
+  border-radius: 24px;
+  color: var(--vc-text);
+}
+
+.vc-checkin-popup .vc-muted {
+  color: var(--vc-muted);
+}
+
+.vc-checkin-popup .vc-quiet {
+  margin-top: 8px;
+}
+
+/* Keep small screens comfortable */
+@media (max-width: 700px) {
+  .vc-shell {
+    width: min(100% - 24px, 1080px);
+    padding-top: 22px;
+  }
+
+  .vc-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-shell .vc-card {
+    padding: 21px;
+    border-radius: 18px;
+  }
+
+  .vc-checkin-popup {
+    padding: 28px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vc-header {
+    gap: 12px;
+  }
+
+  .vc-header h1 {
+    font-size: 2rem;
+  }
+
+  .vc-header > button {
+    flex-shrink: 0;
+  }
+
+  .vc-nav {
+    gap: 7px;
+  }
+
+  .vc-nav button {
+    padding: 9px 10px;
+    font-size: 0.86rem;
+  }
+
+  .vc-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-shell .vc-welcome {
+    align-items: flex-start;
+  }
+
+  .vc-moods {
+    gap: 8px;
+  }
+
+  .vc-shell .vc-mood-option {
+    padding: 9px 11px;
+    font-size: 0.9rem;
+  }
+
+  .vc-checkin-moods {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-breath-circle.is-breathing {
+    animation: none;
+  }
+}
