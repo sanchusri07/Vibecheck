@@ -21,8 +21,44 @@ const MOODS = [
   { name: "Sad", emoji: "🌧️", color: "#8FA8D4" },
   { name: "Tired", emoji: "🌙", color: "#C2B5CF" },
   { name: "Excited", emoji: "✨", color: "#E5A9C8" },
-  { name: "Overwhelmed", emoji: "🫧", color: "#B6A6E8" },
-  { name: "Stressed", emoji: "🌧️", color: "#8FA8D4" },
+];
+
+const SOOTHING_SOUNDS = [
+  {
+    id: "rain",
+    name: "Gentle Rain",
+    emoji: "🌧️",
+    description: "Soft rainfall for a quiet moment.",
+    src: "/sounds/rain.mp3",
+  },
+  {
+    id: "waves",
+    name: "Ocean Waves",
+    emoji: "🌊",
+    description: "Gentle waves rolling onto the shore.",
+    src: "/sounds/waves.mp3",
+  },
+  {
+    id: "birds",
+    name: "Forest Birds",
+    emoji: "🐦",
+    description: "Birdsong and peaceful forest ambience.",
+    src: "/sounds/birds.mp3",
+  },
+  {
+    id: "fireplace",
+    name: "Fireplace",
+    emoji: "🔥",
+    description: "Soft, cozy crackling sounds.",
+    src: "/sounds/fireplace.mp3",
+  },
+  {
+    id: "crickets",
+    name: "Night Crickets",
+    emoji: "🌙",
+    description: "Sounds of a quiet night.",
+    src: "/sounds/crickets.mp3",
+  },
 ];
 
 const todayKey = () => new Date().toLocaleDateString("en-CA");
@@ -37,102 +73,6 @@ const HELPLINES = [
     name: "Emergency services — India",
     number: "112",
     detail: "For immediate danger or an urgent emergency.",
-  },
-];
-
-const MOOD_CARDS = [
-  {
-    emoji: "🌙",
-    title: "For the days you feel exhausted",
-    message:
-      "You don't have to solve everything today. Rest is allowed. Taking one small step, or taking a break, is enough for now.",
-    prompt: "What is one thing you can give yourself permission to pause?",
-    color: "#C2B5CF",
-  },
-  {
-    emoji: "☁️",
-    title: "For the moments you feel anxious",
-    message:
-      "You don't need to figure out the whole future right now. Come back to this moment. You can take things one step at a time.",
-    prompt: "What is one small thing you can focus on right now?",
-    color: "#B6A6E8",
-  },
-  {
-    emoji: "🌧️",
-    title: "For when you're feeling low",
-    message:
-      "You don't have to pretend to be okay. Your feelings deserve space, even when you can't explain them. Be gentle with yourself today.",
-    prompt: "What would you say to a friend who felt the way you do?",
-    color: "#8FA8D4",
-  },
-  {
-    emoji: "🌿",
-    title: "A little reminder to slow down",
-    message:
-      "You are allowed to move at your own pace. You don't have to compare your journey with someone else's.",
-    prompt: "Can you take five quiet minutes just for yourself?",
-    color: "#8FC9C0",
-  },
-  {
-    emoji: "☀️",
-    title: "For when you need a little hope",
-    message:
-      "A difficult day isn't the whole story. Small moments of comfort count, and you are allowed to begin again tomorrow.",
-    prompt: "What is one small thing that might make today a little easier?",
-    color: "#E8C98A",
-  },
-  {
-    emoji: "✨",
-    title: "For when you forget your worth",
-    message:
-      "You are more than your grades, productivity, mistakes, or what other people think of you. You deserve kindness, including from yourself.",
-    prompt: "What is one quality you appreciate about yourself?",
-    color: "#E5A9C8",
-  },
-];
-
-const CHECKIN_MOODS = [
-  ...MOODS.filter(
-    (mood) => !["Anxious", "Sad", "Tired", "Overwhelmed", "Stressed"].includes(mood.name)
-  ),
-  ...MOODS.filter((mood) =>
-    ["Anxious", "Overwhelmed", "Stressed", "Sad", "Tired"].includes(mood.name)
-  ),
-];
-
-const GROUNDING_STEPS = [
-  {
-    number: 5,
-    emoji: "👀",
-    sense: "things you can SEE",
-    prompt: "Look around slowly. Name five things you can see.",
-  },
-  {
-    number: 4,
-    emoji: "🤲",
-    sense: "things you can FEEL",
-    prompt:
-      "Notice four things you can physically feel, like your feet on the floor or the fabric of your clothes.",
-  },
-  {
-    number: 3,
-    emoji: "👂",
-    sense: "things you can HEAR",
-    prompt: "Listen gently. Notice three sounds around you.",
-  },
-  {
-    number: 2,
-    emoji: "🌸",
-    sense: "things you can SMELL",
-    prompt:
-      "Notice two smells, if you can. It's okay if you can't identify any.",
-  },
-  {
-    number: 1,
-    emoji: "🍃",
-    sense: "thing you can TASTE",
-    prompt:
-      "Notice one taste, or choose another comfortable sensation if tasting isn't suitable.",
   },
 ];
 
@@ -166,37 +106,38 @@ function App() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Login check-in popup
-  const [showLoginCheckin, setShowLoginCheckin] = useState(true);
-  const [loginMood, setLoginMood] = useState("");
-  const [showExerciseChoice, setShowExerciseChoice] = useState(false);
-
-  // Daily check-in
   const [selectedMood, setSelectedMood] = useState("");
   const [checkinText, setCheckinText] = useState("");
   const [todayCheckin, setTodayCheckin] = useState(null);
 
-  // Journal
   const [journalText, setJournalText] = useState("");
   const [journalMood, setJournalMood] = useState("");
   const [journalEntries, setJournalEntries] = useState([]);
   const [calendarDate, setCalendarDate] = useState(todayKey());
 
-  // Trusted contacts
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contacts, setContacts] = useState([]);
 
-  // Breathing
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hey, friend 🐾 I'm your little black-dog companion. You don't need to explain everything perfectly. What's on your mind?",
+    },
+  ]);
+
   const [breathing, setBreathing] = useState(false);
   const [breathPhase, setBreathPhase] = useState("Ready when you are");
   const [breathCount, setBreathCount] = useState(0);
 
-  // Grounding
-  const [groundingStep, setGroundingStep] = useState(0);
-
-  // Mood Cards
-  const [moodCardIndex, setMoodCardIndex] = useState(0);
+  // Soothing Sounds feature
+  const [activeSound, setActiveSound] = useState("rain");
+  const [customSound, setCustomSound] = useState(null);
+  const [soundVolume, setSoundVolume] = useState(0.5);
+  const [soundError, setSoundError] = useState("");
+  const [soundPlaying, setSoundPlaying] = useState(false);
 
   const uid = user?.uid;
 
@@ -205,7 +146,6 @@ function App() {
       setUser(currentUser);
       setAuthLoading(false);
     });
-
     return unsubscribe;
   }, []);
 
@@ -235,15 +175,9 @@ function App() {
           ...item.data(),
         }));
 
-        const savedCheckin =
-          checkins.find((item) => item.date === todayKey()) || null;
-
-        setTodayCheckin(savedCheckin);
-
-        if (savedCheckin) {
-          setSelectedMood(savedCheckin.mood || "");
-          setCheckinText(savedCheckin.reflection || "");
-        }
+        setTodayCheckin(
+          checkins.find((item) => item.date === todayKey()) || null
+        );
 
         setJournalEntries(
           journalSnapshot.docs.map((item) => ({
@@ -260,7 +194,6 @@ function App() {
         );
       } catch (error) {
         console.error("Could not load VibeCheck data:", error);
-
         if (active) {
           setNotice(
             "We couldn't load some saved data. Please check your connection and Firestore rules."
@@ -276,6 +209,15 @@ function App() {
     };
   }, [uid]);
 
+  // Clean up uploaded audio when the component is removed or the file changes.
+  useEffect(() => {
+    return () => {
+      if (customSound?.src) {
+        URL.revokeObjectURL(customSound.src);
+      }
+    };
+  }, [customSound]);
+
   const entriesForSelectedDate = useMemo(
     () => journalEntries.filter((entry) => entry.date === calendarDate),
     [journalEntries, calendarDate]
@@ -283,7 +225,6 @@ function App() {
 
   const monthEntries = useMemo(() => {
     const prefix = calendarDate.slice(0, 7);
-
     return journalEntries.filter((entry) =>
       String(entry.date || "").startsWith(prefix)
     );
@@ -314,12 +255,8 @@ function App() {
 
     try {
       await setDoc(doc(db, "users", uid, "checkins", todayKey()), data);
-
       setTodayCheckin({ ...data });
-
-      setNotice(
-        "Your check-in is saved. Thank you for pausing for yourself ✨"
-      );
+      setNotice("Your check-in is saved. Thank you for pausing for yourself ✨");
     } catch (error) {
       console.error(error);
       setNotice("Your check-in couldn't be saved. Please try again.");
@@ -396,11 +333,7 @@ function App() {
         data
       );
 
-      setContacts((previous) => [
-        ...previous,
-        { ...data, id: saved.id },
-      ]);
-
+      setContacts((previous) => [...previous, { ...data, id: saved.id }]);
       setContactName("");
       setContactPhone("");
       setNotice("Your contact has been saved.");
@@ -412,15 +345,70 @@ function App() {
     }
   }
 
-  // Four equal phases for box breathing.
+  async function sendChatMessage(event) {
+    event?.preventDefault();
+
+    const message = chatInput.trim();
+    if (!message || busy) return;
+
+    const updatedMessages = [
+      ...chatMessages,
+      { role: "user", content: message },
+    ];
+
+    setChatMessages(updatedMessages);
+    setChatInput("");
+    setBusy(true);
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: updatedMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "The chat service is unavailable.");
+      }
+
+      setChatMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            data.reply ||
+            "I'm here with you. Want to tell me a little more?",
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+      setChatMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            "Oh, my little paws got tangled connecting just now 🐾 Please try again in a moment. You can still take a slow breath while we reconnect.",
+        },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     if (!breathing) return;
 
     const phases = [
       { label: "Breathe in gently…", duration: 4000, count: 1 },
-      { label: "Hold gently…", duration: 4000, count: 0 },
-      { label: "Breathe out slowly…", duration: 4000, count: 0 },
-      { label: "Rest gently…", duration: 4000, count: 0 },
+      { label: "Breathe out slowly…", duration: 6000, count: 0 },
     ];
 
     let phaseIndex = 0;
@@ -428,12 +416,8 @@ function App() {
 
     function nextPhase() {
       const phase = phases[phaseIndex];
-
       setBreathPhase(phase.label);
-
-      if (phase.count) {
-        setBreathCount((count) => count + 1);
-      }
+      if (phase.count) setBreathCount((count) => count + 1);
 
       timeout = setTimeout(() => {
         phaseIndex = (phaseIndex + 1) % phases.length;
@@ -451,144 +435,34 @@ function App() {
     setBreathPhase("Ready when you are");
   }
 
-  function chooseLoginMood(mood) {
-    setLoginMood(mood);
-    setSelectedMood(mood);
+  function handleSoundUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    if (["Anxious", "Overwhelmed", "Stressed"].includes(mood)) {
-      setShowExerciseChoice(true);
-    } else {
-      setShowLoginCheckin(false);
-      setShowExerciseChoice(false);
+    if (!file.type.startsWith("audio/")) {
+      setSoundError("Please choose an audio file.");
+      event.target.value = "";
+      return;
     }
-  }
 
-  function closeLoginCheckin() {
-    setShowLoginCheckin(false);
-    setShowExerciseChoice(false);
-  }
+    if (customSound?.src) {
+      URL.revokeObjectURL(customSound.src);
+    }
 
-  function startBoxBreathing() {
-    setShowLoginCheckin(false);
-    setShowExerciseChoice(false);
-    setBreathCount(0);
-    setBreathing(false);
-    setPage("breathe");
-  }
+    const src = URL.createObjectURL(file);
 
-  function startGrounding() {
-    setGroundingStep(0);
-    setShowLoginCheckin(false);
-    setShowExerciseChoice(false);
-    setPage("grounding");
-  }
+    setCustomSound({
+      id: "custom",
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      emoji: "🎵",
+      description: "Your own sound, ready for a quiet moment.",
+      src,
+    });
 
-  function renderLoginCheckin() {
-    return (
-      <div
-        className="vc-checkin-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="vc-checkin-title"
-      >
-        <section className="vc-card vc-checkin-popup">
-          <button
-            className="vc-checkin-close"
-            type="button"
-            onClick={closeLoginCheckin}
-            aria-label="Close check-in"
-          >
-            ×
-          </button>
-
-          {!showExerciseChoice ? (
-            <>
-              <div className="vc-checkin-orb">✦</div>
-              <p className="vc-eyebrow">A MOMENT JUST FOR YOU</p>
-              <h2 id="vc-checkin-title">
-                Hey, stargazer. How are you feeling? 💜
-              </h2>
-              <p className="vc-muted">
-                No pressure to feel a certain way. Choose whatever feels closest.
-              </p>
-
-              <div className="vc-checkin-moods">
-                {CHECKIN_MOODS.map((mood) => (
-                  <button
-                    key={mood.name}
-                    type="button"
-                    className={`vc-mood-option ${
-                      loginMood === mood.name ? "selected" : ""
-                    }`}
-                    style={{ "--mood-color": mood.color }}
-                    onClick={() => chooseLoginMood(mood.name)}
-                  >
-                    <span>{mood.emoji}</span>
-                    {mood.name}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                className="vc-quiet"
-                type="button"
-                onClick={closeLoginCheckin}
-              >
-                Maybe later
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="vc-checkin-orb">🌿</div>
-              <p className="vc-eyebrow">
-                LET'S TAKE IT ONE STEP AT A TIME
-              </p>
-              <h2 id="vc-checkin-title">
-                Feeling {loginMood.toLowerCase()} can be a lot.
-              </h2>
-              <p className="vc-muted">
-                Would you like to try a short exercise together? You can skip it
-                anytime.
-              </p>
-
-              <button
-                className="vc-exercise-choice"
-                type="button"
-                onClick={startBoxBreathing}
-              >
-                <span>🌬️</span>
-                <span>
-                  <strong>Box breathing</strong>
-                  <small>Breathe in, hold, breathe out, and pause.</small>
-                </span>
-                <span>→</span>
-              </button>
-
-              <button
-                className="vc-exercise-choice"
-                type="button"
-                onClick={startGrounding}
-              >
-                <span>🌿</span>
-                <span>
-                  <strong>5-4-3-2-1 grounding</strong>
-                  <small>Reconnect with the world around you.</small>
-                </span>
-                <span>→</span>
-              </button>
-
-              <button
-                className="vc-quiet"
-                type="button"
-                onClick={closeLoginCheckin}
-              >
-                Not right now
-              </button>
-            </>
-          )}
-        </section>
-      </div>
-    );
+    setActiveSound("custom");
+    setSoundError("");
+    setSoundPlaying(false);
+    event.target.value = "";
   }
 
   function renderHome() {
@@ -603,7 +477,6 @@ function App() {
               to check in, breathe, or simply be.
             </p>
           </div>
-
           <BlackDog />
         </section>
 
@@ -634,7 +507,6 @@ function App() {
           <label htmlFor="daily-reflection">
             What's making you feel this way today?
           </label>
-
           <textarea
             id="daily-reflection"
             rows="4"
@@ -666,10 +538,18 @@ function App() {
             onClick={() => setPage("breathe")}
           >
             <span className="vc-feature-icon">🌬️</span>
-            <h3>Focus &amp; Breathe</h3>
-            <p className="vc-muted">
-              A small breathing break, just for you.
-            </p>
+            <h3>Focus & Breathe</h3>
+            <p className="vc-muted">A small breathing break, just for you.</p>
+          </button>
+
+          <button
+            className="vc-card vc-feature"
+            type="button"
+            onClick={() => setPage("buddy")}
+          >
+            <BlackDog small />
+            <h3>Talk it out</h3>
+            <p className="vc-muted">Chat with your little black-dog companion.</p>
           </button>
 
           <button
@@ -679,9 +559,7 @@ function App() {
           >
             <span className="vc-feature-icon">📔</span>
             <h3>Your journal</h3>
-            <p className="vc-muted">
-              Leave today's thoughts on a page.
-            </p>
+            <p className="vc-muted">Leave today's thoughts on a page.</p>
           </button>
 
           <button
@@ -691,20 +569,18 @@ function App() {
           >
             <span className="vc-feature-icon">🫶</span>
             <h3>Your support</h3>
-            <p className="vc-muted">
-              Your contacts and helpful helplines.
-            </p>
+            <p className="vc-muted">Your contacts and helpful helplines.</p>
           </button>
 
           <button
             className="vc-card vc-feature"
             type="button"
-            onClick={() => setPage("mood-cards")}
+            onClick={() => setPage("sounds")}
           >
-            <span className="vc-feature-icon">✨</span>
-            <h3>Mood Cards</h3>
+            <span className="vc-feature-icon">🎧</span>
+            <h3>Soothing Sounds</h3>
             <p className="vc-muted">
-              A little reminder for whatever kind of day you're having.
+              Rain, waves, and little sounds for a softer moment.
             </p>
           </button>
         </section>
@@ -718,9 +594,8 @@ function App() {
         <p className="vc-eyebrow">SLOW DOWN A LITTLE</p>
         <h2>Let's breathe together</h2>
         <p className="vc-muted">
-          Follow the four gentle phases at a comfortable pace. If focusing on
-          your breath feels uncomfortable, stop and simply notice the room
-          around you. You never need to force or hold your breath.
+          Follow the circle at a comfortable pace. If focusing on your breath
+          feels uncomfortable, stop and simply notice the room around you.
         </p>
 
         <div
@@ -736,7 +611,7 @@ function App() {
         <p className="vc-soft">
           {breathing
             ? `Breathing cycle ${breathCount}`
-            : "Inhale, hold gently, exhale, then pause."}
+            : "Try a gentle inhale, then a slower exhale."}
         </p>
 
         <div className="vc-actions">
@@ -749,7 +624,7 @@ function App() {
                 setBreathing(true);
               }}
             >
-              Begin box breathing
+              Begin breathing
             </button>
           ) : (
             <button
@@ -760,14 +635,10 @@ function App() {
               Finish for now
             </button>
           )}
-
           <button
             className="vc-quiet"
             type="button"
-            onClick={() => {
-              stopBreathing();
-              setPage("home");
-            }}
+            onClick={() => setPage("home")}
           >
             Back to home
           </button>
@@ -776,86 +647,52 @@ function App() {
     );
   }
 
-  function renderGrounding() {
-    const step = GROUNDING_STEPS[groundingStep];
-
+  function renderChat() {
     return (
-      <section className="vc-card vc-grounding">
-        <p className="vc-eyebrow">HERE, IN THIS MOMENT</p>
-        <h2>Let's ground ourselves 🌿</h2>
-        <p className="vc-muted">
-          There's no need to rush. Take each step at your own pace, and skip
-          anything that doesn't feel comfortable.
-        </p>
-
-        {groundingStep < GROUNDING_STEPS.length ? (
-          <div className="vc-grounding-step" aria-live="polite">
-            <span className="vc-grounding-emoji">{step.emoji}</span>
-            <p className="vc-grounding-number">{step.number}</p>
-            <h3>{step.sense}</h3>
-            <p>{step.prompt}</p>
-
-            <div
-              className="vc-grounding-progress"
-              aria-label={`Step ${groundingStep + 1} of ${GROUNDING_STEPS.length}`}
-            >
-              {GROUNDING_STEPS.map((item, index) => (
-                <span
-                  key={item.number}
-                  className={index <= groundingStep ? "active" : ""}
-                />
-              ))}
-            </div>
-
-            <div className="vc-actions">
-              <button
-                className="vc-primary"
-                type="button"
-                onClick={() => {
-                  if (groundingStep === GROUNDING_STEPS.length - 1) {
-                    setGroundingStep(GROUNDING_STEPS.length);
-                  } else {
-                    setGroundingStep((current) => current + 1);
-                  }
-                }}
-              >
-                {groundingStep === GROUNDING_STEPS.length - 1
-                  ? "Finish exercise ✨"
-                  : "Next step →"}
-              </button>
-
-              <button
-                className="vc-quiet"
-                type="button"
-                onClick={() => {
-                  setGroundingStep(0);
-                  setPage("home");
-                }}
-              >
-                Finish for now
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="vc-grounding-finish">
-            <span className="vc-grounding-emoji">💜</span>
-            <h3>You made space for yourself.</h3>
+      <section className="vc-card vc-chat-card">
+        <div className="vc-chat-heading">
+          <BlackDog />
+          <div>
+            <p className="vc-eyebrow">YOUR LITTLE COMPANION</p>
+            <h2>Hey, I'm Buddy 🐾</h2>
             <p className="vc-muted">
-              Take a moment to notice how you feel. You don't have to feel
-              completely different for this pause to count.
+              No pressure. No perfect words required.
             </p>
-            <button
-              className="vc-primary"
-              type="button"
-              onClick={() => {
-                setGroundingStep(0);
-                setPage("home");
-              }}
-            >
-              Back to my space
-            </button>
           </div>
-        )}
+        </div>
+
+        <div className="vc-chat-messages" aria-live="polite">
+          {chatMessages.map((message, index) => (
+            <div
+              key={`${index}-${message.role}`}
+              className={`vc-chat-bubble ${
+                message.role === "user" ? "vc-chat-user" : "vc-chat-buddy"
+              }`}
+            >
+              {message.role !== "user" && <span>🐾 </span>}
+              {message.content}
+            </div>
+          ))}
+          {busy && <p className="vc-soft">Buddy is thinking… 🐾</p>}
+        </div>
+
+        <form className="vc-chat-form" onSubmit={sendChatMessage}>
+          <input
+            aria-label="Your message"
+            value={chatInput}
+            onChange={(event) => setChatInput(event.target.value)}
+            placeholder="Tell Buddy what's on your mind…"
+            maxLength={2000}
+          />
+          <button className="vc-primary" type="submit" disabled={busy}>
+            Send
+          </button>
+        </form>
+
+        <p className="vc-soft">
+          Buddy is an AI companion, not a human or therapist. Avoid sharing
+          passwords, addresses, or other sensitive personal details.
+        </p>
       </section>
     );
   }
@@ -872,7 +709,6 @@ function App() {
           </p>
 
           <label htmlFor="journal-mood">Today's vibe</label>
-
           <div className="vc-moods">
             {MOODS.map((mood) => (
               <button
@@ -890,10 +726,7 @@ function App() {
             ))}
           </div>
 
-          <label htmlFor="journal-entry">
-            What would you like to remember?
-          </label>
-
+          <label htmlFor="journal-entry">What would you like to remember?</label>
           <textarea
             id="journal-entry"
             rows="6"
@@ -915,9 +748,7 @@ function App() {
         <section className="vc-card vc-calendar-card">
           <p className="vc-eyebrow">YOUR MOOD CALENDAR</p>
           <h2>Look back gently</h2>
-
           <label htmlFor="journal-date">Choose a date</label>
-
           <input
             id="journal-date"
             type="date"
@@ -928,7 +759,6 @@ function App() {
           <div className="vc-calendar-dots">
             {monthEntries.map((entry) => {
               const mood = MOODS.find((item) => item.name === entry.mood);
-
               return (
                 <button
                   key={entry.id}
@@ -942,9 +772,7 @@ function App() {
                   <span>{Number(entry.date.slice(-2))}</span>
                   <span
                     className="vc-calendar-dot"
-                    style={{
-                      background: mood?.color || "#bda7ff",
-                    }}
+                    style={{ background: mood?.color || "#bda7ff" }}
                   />
                 </button>
               );
@@ -955,15 +783,14 @@ function App() {
 
           {entriesForSelectedDate.length === 0 ? (
             <p className="vc-muted">
-              No journal page for this date yet. That's okay; every day
-              doesn't need to be documented.
+              No journal page for this date yet. That's okay; every day doesn't
+              need to be documented.
             </p>
           ) : (
             entriesForSelectedDate.map((entry) => (
               <article className="vc-entry" key={entry.id}>
                 <p className="vc-entry-mood">
-                  {MOODS.find((item) => item.name === entry.mood)?.emoji ||
-                    "🌙"}{" "}
+                  {MOODS.find((item) => item.name === entry.mood)?.emoji || "🌙"}{" "}
                   {entry.mood}
                 </p>
                 <p>{entry.text}</p>
@@ -974,7 +801,6 @@ function App() {
 
         <section className="vc-card">
           <h3>Recent pages</h3>
-
           {journalEntries.length === 0 ? (
             <p className="vc-muted">
               Your journal will grow one small page at a time.
@@ -985,9 +811,7 @@ function App() {
                 className="vc-entry vc-entry-button"
                 key={entry.id}
                 type="button"
-                onClick={() =>
-                  setCalendarDate(entry.date || todayKey())
-                }
+                onClick={() => setCalendarDate(entry.date || todayKey())}
               >
                 <strong>
                   {entry.date} · {entry.mood || "A little reflection"}
@@ -1013,7 +837,6 @@ function App() {
           </p>
 
           <label htmlFor="contact-name">Contact name</label>
-
           <input
             id="contact-name"
             value={contactName}
@@ -1022,7 +845,6 @@ function App() {
           />
 
           <label htmlFor="contact-phone">Phone number</label>
-
           <input
             id="contact-phone"
             type="tel"
@@ -1053,8 +875,8 @@ function App() {
           <p className="vc-eyebrow">SUPPORT WHEN YOU NEED IT</p>
           <h2>You're not alone.</h2>
           <p className="vc-muted">
-            If you need support, consider reaching out to someone you trust
-            or a qualified professional.
+            If you need support, consider reaching out to someone you trust or
+            a qualified professional.
           </p>
 
           {HELPLINES.map((line) => (
@@ -1066,95 +888,165 @@ function App() {
           ))}
 
           <p className="vc-soft">
-            If you or someone else is in immediate danger in India, call
-            112. For mental health support, Tele-MANAS is available at
-            14416.
+            If you or someone else is in immediate danger in India, call 112.
+            For mental health support, Tele-MANAS is available at 14416.
           </p>
         </section>
       </>
     );
   }
 
-  function renderMoodCards() {
-    const card = MOOD_CARDS[moodCardIndex];
+  function renderSoothingSounds() {
+    const selectedSound =
+      activeSound === "custom" && customSound
+        ? customSound
+        : SOOTHING_SOUNDS.find((sound) => sound.id === activeSound) ||
+          SOOTHING_SOUNDS[0];
 
     return (
-      <section className="vc-card vc-mood-cards-page">
-        <p className="vc-eyebrow">A LITTLE KINDNESS FOR YOU ✦</p>
-        <h2>Your Mood Cards</h2>
+      <section className="vc-card vc-sounds-page">
+        <p className="vc-eyebrow">YOUR LITTLE SOUND SANCTUARY</p>
+        <h2>A softer moment 🎧</h2>
         <p className="vc-muted">
-          A small reminder for whatever kind of day you're having.
-          Take what you need, leave the rest.
+          Choose a sound, get comfortable, and give yourself a few quiet
+          minutes. There's nothing you need to achieve here.
         </p>
 
-        <div
-          className="vc-mood-card"
-          style={{ "--mood-card-color": card.color }}
-          aria-live="polite"
-        >
-          <div className="vc-mood-card-orb" aria-hidden="true">
-            {card.emoji}
+        <div className="vc-sounds-grid">
+          {SOOTHING_SOUNDS.map((sound) => (
+            <button
+              key={sound.id}
+              type="button"
+              className={`vc-sound-card ${
+                activeSound === sound.id ? "selected" : ""
+              }`}
+              onClick={() => {
+                setActiveSound(sound.id);
+                setSoundError("");
+                setSoundPlaying(false);
+              }}
+            >
+              <span className="vc-sound-emoji">{sound.emoji}</span>
+              <strong>{sound.name}</strong>
+              <span className="vc-sound-description">
+                {sound.description}
+              </span>
+            </button>
+          ))}
+
+          {customSound && (
+            <button
+              type="button"
+              className={`vc-sound-card ${
+                activeSound === "custom" ? "selected" : ""
+              }`}
+              onClick={() => {
+                setActiveSound("custom");
+                setSoundError("");
+                setSoundPlaying(false);
+              }}
+            >
+              <span className="vc-sound-emoji">🎵</span>
+              <strong>{customSound.name}</strong>
+              <span className="vc-sound-description">Your uploaded sound</span>
+            </button>
+          )}
+        </div>
+
+        <div className="vc-sound-player">
+          <div className="vc-sound-player-heading">
+            <span className="vc-sound-emoji">{selectedSound.emoji}</span>
+            <div>
+              <p className="vc-eyebrow">NOW SELECTED</p>
+              <h3>{selectedSound.name}</h3>
+              <p className="vc-muted">{selectedSound.description}</p>
+            </div>
           </div>
 
-          <p className="vc-mood-card-count">
-            CARD {moodCardIndex + 1} OF {MOOD_CARDS.length}
+          <audio
+            key={selectedSound.src}
+            className="vc-audio"
+            controls
+            loop
+            preload="none"
+            src={selectedSound.src}
+            onPlay={() => {
+              setSoundPlaying(true);
+              setSoundError("");
+            }}
+            onPause={() => setSoundPlaying(false)}
+            onError={() => {
+              setSoundPlaying(false);
+              setSoundError(
+                "This sound file isn't available yet. Add the matching MP3 file to your public/sounds folder."
+              );
+            }}
+            ref={(element) => {
+              if (element) element.volume = soundVolume;
+            }}
+          >
+            Your browser does not support audio playback.
+          </audio>
+
+          <label htmlFor="sound-volume">
+            Volume: {Math.round(soundVolume * 100)}%
+          </label>
+          <input
+            id="sound-volume"
+            className="vc-volume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={soundVolume}
+            onChange={(event) =>
+              setSoundVolume(Number(event.target.value))
+            }
+          />
+
+          <p className="vc-soft" aria-live="polite">
+            {soundPlaying
+              ? "Take your time. You can pause whenever you like. ✨"
+              : "Press play when you're ready."}
           </p>
 
-          <h3>{card.title}</h3>
-          <p className="vc-mood-card-message">{card.message}</p>
-
-          <div className="vc-mood-card-prompt">
-            <span>✦ A gentle pause</span>
-            <p>{card.prompt}</p>
-          </div>
+          {soundError && (
+            <p className="vc-sound-error" role="status">
+              {soundError}
+            </p>
+          )}
         </div>
 
-        <div className="vc-mood-card-controls">
+        <div className="vc-sound-upload">
+          <h3>Bring your own sound 🎶</h3>
+          <p className="vc-muted">
+            Choose an audio file from your device. It can be played here during
+            this session; it isn't uploaded to your VibeCheck account.
+          </p>
+          <label className="vc-upload-label" htmlFor="custom-sound">
+            Choose an audio file
+          </label>
+          <input
+            id="custom-sound"
+            type="file"
+            accept="audio/*"
+            onChange={handleSoundUpload}
+          />
+          <p className="vc-soft">
+            Your file stays local to this browser session. If you refresh the
+            page, you'll need to select it again.
+          </p>
+        </div>
+
+        <div className="vc-actions">
           <button
-            type="button"
             className="vc-quiet"
-            onClick={() =>
-              setMoodCardIndex(
-                (current) =>
-                  (current - 1 + MOOD_CARDS.length) % MOOD_CARDS.length
-              )
-            }
-          >
-            ← Previous
-          </button>
-
-          <span className="vc-mood-card-dots">
-            {MOOD_CARDS.map((item, index) => (
-              <button
-                key={item.title}
-                type="button"
-                className={`vc-mood-card-dot ${
-                  index === moodCardIndex ? "active" : ""
-                }`}
-                aria-label={`Show card ${index + 1}: ${item.title}`}
-                aria-current={index === moodCardIndex ? "true" : undefined}
-                onClick={() => setMoodCardIndex(index)}
-              />
-            ))}
-          </span>
-
-          <button
             type="button"
-            className="vc-primary"
-            onClick={() =>
-              setMoodCardIndex(
-                (current) => (current + 1) % MOOD_CARDS.length
-              )
-            }
+            onClick={() => setPage("home")}
           >
-            Next card →
+            Back to home
           </button>
         </div>
-
-        <p className="vc-soft vc-mood-card-footer">
-          You can come back to these reminders whenever you need a little
-          breathing room. 💜
-        </p>
       </section>
     );
   }
@@ -1182,7 +1074,6 @@ function App() {
             continue. Your journal and contacts are available only after
             authentication.
           </p>
-
           <button
             className="vc-primary"
             type="button"
@@ -1198,10 +1089,10 @@ function App() {
   const pages = [
     { id: "home", label: "Home", emoji: "✦" },
     { id: "breathe", label: "Focus & Breathe", emoji: "🌬️" },
+    { id: "buddy", label: "Talk it out", emoji: "🐾" },
     { id: "journal", label: "Journal", emoji: "📔" },
     { id: "support", label: "Support", emoji: "🫶" },
-    { id: "mood-cards", label: "Mood Cards", emoji: "✨" },
-    { id: "grounding", label: "Grounding", emoji: "🌿" },
+    { id: "sounds", label: "Soothing Sounds", emoji: "🎧" },
   ];
 
   return (
@@ -1217,7 +1108,13 @@ function App() {
           </p>
         </div>
 
-        
+        <button
+          className="vc-quiet"
+          type="button"
+          onClick={() => auth.signOut()}
+        >
+          Sign out
+        </button>
       </header>
 
       <nav className="vc-nav" aria-label="Main navigation">
@@ -1248,16 +1145,14 @@ function App() {
 
       {page === "home" && renderHome()}
       {page === "breathe" && renderBreathing()}
-      {page === "grounding" && renderGrounding()}
+      {page === "buddy" && renderChat()}
       {page === "journal" && renderJournal()}
       {page === "support" && renderSupport()}
-      {page === "mood-cards" && renderMoodCards()}
+      {page === "sounds" && renderSoothingSounds()}
 
       <footer className="vc-footer">
         Made with care, for the days that feel like a lot. ✦
       </footer>
-
-      {showLoginCheckin && renderLoginCheckin()}
     </main>
   );
 }

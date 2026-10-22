@@ -935,3 +935,189 @@ body {
     animation: none;
   }
 }
+
+/* =========================================
+   SOOTHING SOUNDS — VibeCheck galaxy theme
+   Add this at the bottom of App.css
+   ========================================= */
+
+   .vc-sounds-page {
+    overflow: hidden;
+  }
+  
+  .vc-sounds-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 26px 0;
+  }
+  
+  .vc-sound-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+    min-width: 0;
+    padding: 20px;
+    text-align: left;
+    color: #f6f1ff;
+    background:
+      radial-gradient(ellipse at top right, #64529b24, transparent 65%),
+      linear-gradient(145deg, #211c40, #17142f);
+    border: 1px solid #393052;
+    border-radius: 19px;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      background 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  
+  .vc-sound-card:hover {
+    transform: translateY(-2px);
+    border-color: #76639f;
+  }
+  
+  .vc-sound-card.selected {
+    border-color: #bda7ff;
+    background:
+      radial-gradient(ellipse at top right, #8c76d238, transparent 65%),
+      linear-gradient(145deg, #30264e, #1b1737);
+    box-shadow: 0 0 0 1px #bda7ff35;
+  }
+  
+  .vc-sound-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    background: #30264e;
+    font-size: 1.65rem;
+  }
+  
+  .vc-sound-card strong {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  
+  .vc-sound-description {
+    color: #bcb4d2;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  
+  .vc-sound-player {
+    padding: clamp(18px, 4vw, 28px);
+    margin-top: 22px;
+    border: 1px solid #393052;
+    border-radius: 22px;
+    background:
+      radial-gradient(ellipse at 90% 0%, #64529b32, transparent 55%),
+      linear-gradient(145deg, #1b1737, #100e24);
+  }
+  
+  .vc-sound-player-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .vc-sound-player-heading h3 {
+    margin: 4px 0;
+    overflow-wrap: anywhere;
+  }
+  
+  .vc-sound-player-heading .vc-muted {
+    margin: 5px 0 0;
+  }
+  
+  .vc-audio {
+    display: block;
+    width: 100%;
+    margin: 18px 0;
+    accent-color: #bda7ff;
+  }
+  
+  .vc-sound-player input.vc-volume {
+    width: 100%;
+    padding: 0;
+    accent-color: #bda7ff;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  
+  .vc-sound-upload {
+    margin-top: 22px;
+    padding: clamp(18px, 4vw, 28px);
+    border: 1px dashed #67558d;
+    border-radius: 20px;
+    background: #17142f;
+  }
+  
+  .vc-sound-upload h3 {
+    margin-top: 0;
+  }
+  
+  .vc-sound-upload input[type="file"] {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    color: #e7dfff;
+    background: #100e24;
+    border: 1px solid #494064;
+    border-radius: 13px;
+  }
+  
+  .vc-sound-upload input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 9px 12px;
+    color: #201632;
+    background: #bda7ff;
+    border: 0;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  
+  .vc-upload-label {
+    display: block;
+    margin: 18px 0 8px;
+    color: #e9e2f8;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  
+  .vc-sound-error {
+    padding: 12px 14px;
+    color: #ffc6d0;
+    background: #3b202d;
+    border: 1px solid #6a3548;
+    border-radius: 12px;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 560px) {
+    .vc-sounds-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .vc-sound-card {
+      padding: 17px;
+    }
+  
+    .vc-sound-player-heading {
+      align-items: flex-start;
+      gap: 12px;
+    }
+  
+    .vc-sound-player-heading .vc-sound-emoji {
+      width: 42px;
+      height: 42px;
+    }
+  }
+  
